@@ -115,6 +115,42 @@ class ManagerApiTests(unittest.TestCase):
         self.assertTrue(any(item["id"]=="spiderfoot" for item in items))
         self.assertTrue(any(item["id"]=="wayback" for item in items))
 
+    def test_startup_check_updates_catalog_and_persists_during_session(self):
+        # Simulates a detected SpiderFoot executable with a successful --help run.
+        path = {"value": "/usr/local/bin/spiderfoot"}
+        with mock.patch.object(tool_manager, "executable_path",
+                               side_effect=lambda tool: path["value"] if tool.id == "spiderfoot" else None), \
+             mock.patch.object(tool_manager, "check_tool",
+                               return_value={"id":"spiderfoot","status":"ready","message":"Startup help worked"}):
+            original = next(x for x in self.request("/api/tools")["tools"]
+                            if x["id"] == "spiderfoot")
+            self.assertEqual(original["status"], "detected")
+            checked = self.request("/api/tools/check", {"tool":"spiderfoot"})
+            self.assertEqual(checked["status"], "ready")
+            refreshed = next(x for x in self.request("/api/tools")["tools"]
+                             if x["id"] == "spiderfoot")
+            self.assertEqual(refreshed["status"], "ready")
+            self.assertEqual(refreshed["startup_check"]["message"], "Startup help worked")
+            # Replacing a launcher invalidates the old startup result.
+            path["value"] = "/home/osint/.local/bin/spiderfoot"
+            replaced = next(x for x in self.request("/api/tools")["tools"]
+                            if x["id"] == "spiderfoot")
+            self.assertEqual(replaced["status"], "detected")
+            self.assertNotIn("startup_check", replaced)
+
+    def test_failed_startup_shows_broken_badge_after_refresh(self):
+        with mock.patch.object(tool_manager, "executable_path",
+                               return_value="/home/osint/.local/bin/sherlock"), \
+             mock.patch.object(tool_manager, "check_tool",
+                               return_value={"id":"sherlock","status":"broken",
+                                             "message":"NumPy X86_V2 unsupported"}):
+            checked = self.request("/api/tools/check", {"tool":"sherlock"})
+            self.assertEqual(checked["status"], "broken")
+            item = next(x for x in self.request("/api/tools")["tools"]
+                        if x["id"] == "sherlock")
+            self.assertEqual(item["status"], "broken")
+            self.assertEqual(item["startup_check"]["status"], "broken")
+
     def test_install_cannot_run_without_confirmation_or_token(self):
         with mock.patch.object(tool_manager,"executable_path",return_value=None), \
              mock.patch.object(tool_manager,"run_batch",return_value=[]) as runner:

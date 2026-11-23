@@ -23,7 +23,10 @@ body{background:#091322;color:#e9f2ff}
 .tool-entry .tool-meta{font-size:11px;color:#9dbad6;overflow-wrap:anywhere;margin:8px 0}
 .tool-entry .tool-note{color:#a6b8c9;font-style:italic}
 .tool-status{font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;border:1px solid #55708d;border-radius:15px;color:#bdd8ee;padding:5px 9px;white-space:nowrap}
-.tool-status.detected{border-color:#418a72;color:#b0f1d0;background:#183b34}
+.tool-status.detected{border-color:#687c94;color:#cbd8e7;background:#27374d}
+.tool-status.ready{border-color:#3ca66e;color:#b5f4cf;background:#173d2f}
+.tool-status.broken{border-color:#c45e59;color:#ffceca;background:#4b272e}
+.tool-status.warning{border-color:#bf9151;color:#ffe2a4;background:#493825}
 .tool-status.missing{border-color:#986845;color:#ffd4ae;background:#423127}
 .tool-status.manual{border-color:#777b97;color:#c1c7e5}
 .tool-status.built-in{border-color:#3e8ca7;color:#aee9fc}

@@ -31,6 +31,8 @@ jobs:
         run: node tests/test_network_layout.cjs
       - name: Validate Tool Manager JavaScript
         run: node --check src/reconductor/static/tools.js
+      - name: Test Tool Manager startup status badges
+        run: node tests/test_tool_status.cjs
       - name: Smoke test CLI
         run: |
           reconductor --help

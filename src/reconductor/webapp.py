@@ -30,6 +30,8 @@ class DashboardState:
         self.active_job: str | None = None
         self.active_install: str | None = None
         self.install_jobs: dict[str, dict] = {}
+        # Startup checks are only trusted for the current dashboard session and executable path.
+        self.tool_checks: dict[str, dict] = {}
 
     def run_install(self, job_id: str, tool_ids: list[str]) -> None:
         def on_event(event: dict) -> None:
@@ -40,6 +42,8 @@ class DashboardState:
         try:
             results = tool_manager.run_batch(tool_ids, on_event)
             with self.lock:
+                for tool_id in tool_ids:
+                    self.tool_checks.pop(tool_id, None)
                 self.install_jobs[job_id]["results"] = results
                 self.install_jobs[job_id]["status"] = (
                     "finished" if all(x["state"] in ("installed", "skipped") for x in results)
@@ -180,7 +184,18 @@ def handler_for(state: DashboardState):
                 self._headers(200, mime, len(body))
                 return self.wfile.write(body)
             if path == "/api/tools":
-                return self._send({"tools": tool_manager.catalog(),
+                items = tool_manager.catalog()
+                with state.lock:
+                    checks = dict(state.tool_checks)
+                for item in items:
+                    check = checks.get(item["id"])
+                    if check and item["path"] and check["path"] == item["path"]:
+                        item["status"] = check["status"]
+                        item["startup_check"] = {
+                            "status": check["status"],
+                            "message": check["message"],
+                        }
+                return self._send({"tools": items,
                                    "platform": "linux" if tool_manager.sys.platform.startswith("linux") else "unsupported"})
             if path.startswith("/api/tools/jobs/"):
                 job_id = path.removeprefix("/api/tools/jobs/")
@@ -243,7 +258,19 @@ def handler_for(state: DashboardState):
                 body = self._json_body()
                 path = urlsplit(self.path).path
                 if path == "/api/tools/check":
-                    return self._send(tool_manager.check_tool(body.get("tool")))
+                    report = tool_manager.check_tool(body.get("tool"))
+                    tool = tool_manager.BY_ID[report["id"]]
+                    exe = tool_manager.executable_path(tool)
+                    with state.lock:
+                        # Missing tools must never retain a previous READY badge.
+                        if not exe:
+                            state.tool_checks.pop(report["id"], None)
+                        else:
+                            state.tool_checks[report["id"]] = {
+                                "path": exe, "status": report["status"],
+                                "message": report["message"],
+                            }
+                    return self._send(report)
                 if path == "/api/tools/install":
                     if body.get("acknowledge_changes") is not True or body.get("confirm") != "INSTALL":
                         return self._error(400, "Confirm third-party downloads and enter INSTALL.")

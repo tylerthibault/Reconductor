@@ -1,7 +1,9 @@
-## Tool Manager and deeper research (v0.7)
+## Tool Manager and deeper research (v0.7.1)
 
 Open the local dashboard with `reconductor web`, then select **Tool Manager**
 or visit **http://127.0.0.1:8765/tools.html**.
+
+Tool startup checks now update the **badge** immediately, and retain READY, STARTUP FAILED, or CHECK INCONCLUSIVE when you refresh the catalog during the same dashboard session (provided the executable path has not changed). The badge indicates a successful `--help` launch, not proof that every feature works. Restarting Reconductor clears the check and requires another startup test.
 
 The Tool Manager displays a curated catalog with installation status,
 descriptions, official upstream links, the installation method, and an optional

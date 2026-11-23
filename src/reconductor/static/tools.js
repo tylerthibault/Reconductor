@@ -20,10 +20,27 @@ function updateSelection(){
  const can=chosen.length>0 && $("toolConsent").checked && $("toolConfirm").value==="INSTALL" && !state.job;
  $("installSelected").disabled=!can;
 }
+function startupStatusLabel(status){
+ const labels={
+  ready:"READY · STARTUP CHECK PASSED",
+  detected:"DETECTED · UNTESTED",
+  broken:"STARTUP FAILED",
+  warning:"CHECK INCONCLUSIVE",
+  missing:"MISSING",
+  manual:"MANUAL INSTALL",
+  "built-in":"BUILT IN"
+ };
+ return labels[status]||String(status).toUpperCase();
+}
+function applyBadge(badge,status){
+ badge.className="tool-status "+status;
+ badge.textContent=startupStatusLabel(status);
+}
 function card(tool){
  const root=el("article","tool-entry");
  const row=el("div","tool-entry-header");
- row.append(el("div","tool-entry-title",tool.title),el("span","tool-status "+tool.status,tool.status==="detected"?"Detected • untested":tool.status));
+ const badge=el("span","tool-status");applyBadge(badge,tool.status);
+ row.append(el("div","tool-entry-title",tool.title),badge);
  root.append(row,el("p","",tool.description));
  root.append(el("div","tool-meta","Install method: "+({
    "pipx":"isolated Python package (pipx)",
@@ -51,6 +68,9 @@ function card(tool){
    check.disabled=true;result.hidden=false;result.textContent="Testing executable help command (no research request)…";
    try{
     const report=await api("/api/tools/check",{tool:tool.id});
+    tool.status=report.status;
+    tool.startup_check={status:report.status,message:report.message};
+    applyBadge(badge,report.status);
     result.textContent=report.status.toUpperCase()+"\n"+report.message;
    }catch(error){result.textContent="Error: "+error.message;}
    finally{check.disabled=false;}
@@ -61,7 +81,10 @@ function card(tool){
  }else{
   const link=el("a","","About the service");link.href=tool.url;link.target="_blank";link.rel="noopener noreferrer";footer.append(link);root.append(footer);
  }
- if(tool.status==="manual"){
+ if(tool.startup_check && tool.startup_check.status!=="ready"){
+  root.append(el("p","tool-note","Last startup check: "+tool.startup_check.status+". Use Test startup to check again."));
+ }
+ if(tool.method==="manual-apt"){
   root.append(el("p","tool-note","Manual command on Debian: sudo apt install "+tool.package+". Reconductor will not request sudo credentials from this page."));
  }
  return root;
