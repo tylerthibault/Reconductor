@@ -158,3 +158,12 @@ Reviews are recorded in the private Markdown file `reviews.md` inside
 the case folder. Rejected observations remain readable in the result list
 but are excluded from the case graph; original tool evidence is preserved.
 
+
+## theHarvester on Python 3.13
+
+The automatic installer uses the upstream 4.11.1 release tag so it does not
+silently follow the development branch, which requires Python 3.14. The
+pinned 4.11.1 release supports Python >=3.12. If a prior attempt failed with
+`requires a different Python`, update Reconductor with `git pull`, restart
+its web dashboard, and select theHarvester again in Tool Manager. No system
+Python upgrade is needed for this compatibility issue.

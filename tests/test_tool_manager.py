@@ -55,6 +55,21 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(result["state"],"installed")
         self.assertEqual(commands,[["/usr/bin/pipx","install","maigret"]])
 
+    def test_theharvester_install_pins_python_313_compatible_release(self):
+        tool=tool_manager.BY_ID["theharvester"]
+        self.assertIn("@4.11.1",tool.package)
+        self.assertIn("Python >=3.12",tool.note)
+        self.assertNotEqual(tool.package,"git+https://github.com/laramies/theHarvester.git")
+        commands=[]
+        with mock.patch.object(tool_manager, "executable_path", side_effect=[None,"/fake/theHarvester"]), \
+             mock.patch.object(tool_manager.shutil, "which", return_value="/usr/bin/pipx"), \
+             mock.patch.object(tool_manager, "check_tool", return_value={"status":"ready","message":"ok"}), \
+             mock.patch.object(tool_manager, "_command", side_effect=lambda argv, **kwargs: commands.append(argv)):
+            result=tool_manager.install_one("theharvester",lambda message: None)
+        self.assertEqual(result["state"],"installed")
+        self.assertEqual(commands,[["/usr/bin/pipx","install",
+                                    "git+https://github.com/laramies/theHarvester.git@4.11.1"]])
+
     def test_check_reports_broken_executable(self):
         fake=mock.Mock(returncode=1,stdout="Traceback: NumPy X86_V2 unsupported")
         with mock.patch.object(tool_manager,"executable_path",return_value="/home/test/bin/sherlock"), \

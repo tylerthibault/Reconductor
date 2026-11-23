@@ -45,9 +45,11 @@ CATALOG = (
          "https://github.com/Qeeqbox-Social-Analyzer/Social-Analyzer",
          "Detection ratings are clues, not identity proof."),
     Tool("theharvester", "theHarvester", "Public domain, email, and internet infrastructure discovery.",
-         "theHarvester", "pipx", "git+https://github.com/laramies/theHarvester.git",
-         "https://github.com/laramies/theHarvester",
-         "Installs upstream source using pipx; the required Python and dependencies may vary."),
+         "theHarvester", "pipx", "git+https://github.com/laramies/theHarvester.git@4.11.1",
+         "https://github.com/laramies/theHarvester/releases/tag/4.11.1",
+         "Pinned to upstream 4.11.1 (Python >=3.12), compatible with Python 3.13. "
+         "Unreleased upstream code now requires Python >=3.14. "
+         "This installer does not modify your system Python."),
     Tool("exiftool", "ExifTool", "Reads metadata in local files, images and documents.",
          "exiftool", "manual-apt", "libimage-exiftool-perl",
          "https://exiftool.org/",

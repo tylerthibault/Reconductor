@@ -1,3 +1,13 @@
+## theHarvester installer compatibility fix (v0.7.2)
+
+The Tool Manager now installs **theHarvester 4.11.1** from the official tagged
+release instead of the upstream development branch. The 4.11.1 release declares
+Python 3.12 or newer, allowing the VM's Python 3.13 to satisfy the requirement;
+the newer development branch requires Python 3.14. The install uses `pipx`
+without changing the VM's system Python. An already failed install can be
+retried after a `git pull` and Reconductor restart. Check the launcher
+with **Test startup** afterward.
+
 ## Tool Manager and deeper research (v0.7.1)
 
 Open the local dashboard with `reconductor web`, then select **Tool Manager**
