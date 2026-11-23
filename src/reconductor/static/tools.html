@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Reconductor — Tool Manager</title>
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/tools.css">
+<script src="/tools.js" defer></script>
+</head>
+<body>
+<div class="tool-shell">
+ <aside class="tool-sidebar">
+  <div class="tool-brand"><span>◎</span><div><strong>RECONDUCTOR</strong><small>TOOL MANAGER</small></div></div>
+  <a href="/">← Investigations</a><a href="/network.html">◎ Relationship networks</a>
+  <div class="tool-sidebar-note">Installed tools run locally. Network research and installer downloads use the VM's own internet connection.</div>
+ </aside>
+ <main class="tool-main">
+  <header class="tool-header"><span>WORKSPACE / TOOL MANAGER</span><span>LOCAL SESSION</span></header>
+  <div class="tool-content">
+   <div class="eyebrow">SYSTEM CAPABILITIES</div>
+   <h1>Install and manage research tools</h1>
+   <p class="tool-intro">Check the tools you want, then explicitly authorize installation. Reconductor detects executables already on your VM and uses isolated, user-level installations when supported. It never runs arbitrary commands from this page.</p>
+   <div class="tool-banner">Installed or detected does not necessarily mean working. Use <b>Test</b> to check a tool's startup without conducting a search. An application may still require system dependencies.</div>
+   <div class="tool-actions"><button type="button" id="refreshTools" class="outline">↻ Refresh status</button><span id="selectedCount" aria-live="polite">0 selected</span></div>
+   <section id="toolCatalog" class="tool-grid" aria-label="Tool catalog"><p class="muted">Loading tool catalog…</p></section>
+   <section class="tool-install-box" id="installBox">
+    <div><h2>Selected installation</h2><p>Only tools with an automatic installer can be selected. Package downloads and third-party installer code may access the network or change files under your user account.</p></div>
+    <div id="installReview" class="tool-selected">Select one or more missing tools above.</div>
+    <label class="tool-check"><input id="toolConsent" type="checkbox"> I approve installing the selected third-party applications on this VM.</label>
+    <label class="tool-confirm">Type <b>INSTALL</b> to authorize execution<input id="toolConfirm" placeholder="INSTALL" autocomplete="off"></label>
+    <button id="installSelected" type="button" class="primary full" disabled>Install selected tools</button>
+    <p id="installError" role="alert" class="error"></p>
+   </section>
+   <section class="tool-progress" id="installProgress" hidden>
+     <div class="progress-heading"><h2>Installation activity</h2><span id="progressState">Running…</span></div>
+     <pre id="installLog" aria-live="polite"></pre>
+     <div id="installOutcome"></div>
+   </section>
+   <div id="toolToast" role="status" class="toast" hidden></div>
+  </div>
+ </main>
+</div>
+</body>
+</html>

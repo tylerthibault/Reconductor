@@ -1,3 +1,24 @@
+## Installing tools via the local web interface
+
+Run `reconductor web` and open `http://127.0.0.1:8765/tools.html`.
+
+1. Review the fixed allowlist of supported research tools.
+2. Select missing, auto-installable tools using their checkboxes.
+3. Check the authorization box and type `INSTALL`.
+4. Click **Install selected tools** to launch user-level installation jobs.
+5. Inspect progress, then run **Test startup**. "Detected" alone does not
+   prove the executable can launch.
+
+For non-privileged Python applications Reconductor uses `pipx`.
+SpiderFoot gets its own managed checkout and virtual environment.
+ExifTool requires manual administrator action. Install source releases
+and package dependencies may change over time, and failures are reported
+instead of bypassing security prompts.
+
+Deep mode can add Social Analyzer, Maigret Markdown reports, and a built-in
+Wayback snapshot lookup for explicitly supplied domains. Tools not
+installed are reported as missing rather than silently emulated.
+
 ## Independent relationship network workspaces
 
 Run `reconductor web`, then select **Relationship networks** in the sidebar,

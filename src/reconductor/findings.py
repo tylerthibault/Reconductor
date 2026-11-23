@@ -97,6 +97,16 @@ def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
             "site_summary": "",
             "url": url,
         }
+    if name == "historical snapshot":
+        stamp = re.search(r"/web/([0-9]{14})/", raw)
+        date = "-".join((stamp.group(1)[:4], stamp.group(1)[4:6], stamp.group(1)[6:8])) if stamp else "Unknown date"
+        return {
+            "category": "history",
+            "display_name": "Internet Archive · " + date,
+            "description": "Archived public webpage snapshot, not an identity confirmation",
+            "site_summary": "Shows an earlier archived version of a provided domain; availability does not establish who operated it.",
+            "url": url,
+        }
     if name == "reported public url":
         host = urlsplit(url).hostname if url else None
         return {
@@ -186,7 +196,7 @@ def extract(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
         tool = step.get("tool", "")
         ref = step.get("stdout_file", "")
         raw = _text(folder, ref)
-        if not raw:
+        if not raw and not (tool == "maigret" and step.get("report_file")):
             continue
         if tool == "spiderfoot":
             try:
@@ -205,13 +215,56 @@ def extract(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
                         add(tool, typ, value, ref, str(event.get("source", "")))
                     elif value.startswith(("https://", "http://")) and any(word in typ.casefold() for word in ("link", "site")):
                         add(tool, "Public link", value, ref, str(event.get("source", "")))
-        elif tool in ("maigret", "sherlock"):
-            for match in URL_RE.finditer(raw[:MAX_TEXT]):
-                url = _url(match.group(0))
+        elif tool == "wayback":
+            try:
+                archive_events = json.loads(raw)
+            except (ValueError, TypeError):
+                archive_events = []
+            for event in archive_events[:30] if isinstance(archive_events, list) else []:
+                if isinstance(event, dict) and event.get("type") == "Historical snapshot":
+                    data = event.get("data")
+                    if isinstance(data, str):
+                        add("wayback", "Historical snapshot", data, ref, "Internet Archive CDX")
+        elif tool == "social-analyzer":
+            try:
+                payload = json.loads(raw)
+            except (ValueError, TypeError):
+                payload = []
+            def candidates(value: Any, depth: int = 0):
+                if depth > 3:
+                    return
+                if isinstance(value, list):
+                    for child in value[:200]:
+                        yield from candidates(child, depth + 1)
+                elif isinstance(value, dict):
+                    if isinstance(value.get("link"), str):
+                        found = value.get("found")
+                        if (isinstance(found, int) and not isinstance(found, bool)
+                                and found > 0):
+                            yield value["link"]
+                    else:
+                        for child in list(value.values())[:25]:
+                            yield from candidates(child, depth + 1)
+            for address in candidates(payload):
+                url = _url(address)
                 if url:
-                    add(tool, "Reported public URL", url, ref)
+                    add("social-analyzer", "Reported public URL", url, ref)
                 if len(findings) >= MAX_FINDINGS:
                     break
+        elif tool in ("maigret", "sherlock"):
+            for evidence, text in (
+                (ref, raw),
+                (step.get("report_file", ""), _text(folder, step.get("report_file"), 250_000))
+                if tool == "maigret" else ("", ""),
+            ):
+                if not text:
+                    continue
+                for match in URL_RE.finditer(text[:MAX_TEXT]):
+                    url = _url(match.group(0))
+                    if url:
+                        add(tool, "Reported public URL", url, evidence)
+                    if len(findings) >= MAX_FINDINGS:
+                        break
     return findings
 
 
@@ -226,8 +279,10 @@ def step_previews(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
             "clue": step.get("clue", ""),
             "stdout_file": step.get("stdout_file"),
             "stderr_file": step.get("stderr_file"),
+            "report_file": step.get("report_file"),
             "stdout": _text(folder, step.get("stdout_file"), 4500),
             "stderr": _text(folder, step.get("stderr_file"), 4500),
+            "report": _text(folder, step.get("report_file"), 10000),
         })
     return output
 

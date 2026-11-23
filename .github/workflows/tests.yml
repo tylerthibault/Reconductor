@@ -29,6 +29,8 @@ jobs:
         run: node --check src/reconductor/static/network.js
       - name: Test automatic grouping and membership UI
         run: node tests/test_network_layout.cjs
+      - name: Validate Tool Manager JavaScript
+        run: node --check src/reconductor/static/tools.js
       - name: Smoke test CLI
         run: |
           reconductor --help

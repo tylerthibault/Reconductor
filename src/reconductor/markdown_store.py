@@ -233,7 +233,7 @@ def sync_vault(folder: Path, record: dict, observations: list[dict] | None = Non
                           "\n- **Evidence:** " + evidence + "\n- [[Vault|Investigation index]]\n")
     index.extend(["", "## Raw tool output", ""])
     for step in record.get("steps", []):
-        for key in ("stdout_file", "stderr_file"):
+        for key in ("stdout_file", "stderr_file", "report_file"):
             file = step.get(key)
             if isinstance(file, str) and file.endswith(".md"):
                 index.append("- [[" + str(Path(file).with_suffix("")) + "|" +

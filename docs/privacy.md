@@ -57,3 +57,19 @@ workspace graph only draws links saved within that workspace. Group
 clustering shows common explicit affiliations, not inferred acquaintance
 or automatically verified identity. Do not publish personal network files
 or backups without reviewing them for sensitive information.
+
+## Third-party tool installation
+
+The web installer requires a local session token, an explicit checkbox,
+and the text `INSTALL`. It accepts only catalog identifiers and
+maps each to fixed, allowlisted commands. Subprocesses are invoked without
+an interactive shell, as the currently logged-in user. It does not run
+unattended sudo, modify OS packages or automatically change unrelated files.
+
+Downloads and setup commands necessarily contact external package repositories.
+Installing third-party code is a system change and carries supply-chain risk.
+Review sources and enable or disable tools according to your trust level.
+
+The Wayback history adapter contacts Internet Archive **only** during an
+authorized Deep investigation with an explicitly supplied domain. Returned
+historical URLs and other tool candidates are not proof of identity.

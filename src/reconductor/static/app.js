@@ -49,6 +49,7 @@ function groupFindings(findings){
  const groups=[
   {id:"profile",title:"Possible website profiles",description:"Candidate accounts are not established identity matches. Inspect details and mark each as matching, not matching, or undecided.",icon:"↗"},
   {id:"username",title:"Usernames worth checking",description:"Name similarities alone are weak evidence. Follow independent public links before treating these as the same person.",icon:"@"},
+  {id:"history",title:"Historical website snapshots",description:"Previous archived versions of supplied domains. Dates and archived content can add context, not proof of account ownership.",icon:"◷"},
   {id:"other",title:"Other public clues",description:"Additional leads reported by tools; confirm before using them to build relationships.",icon:"◇"},
   {id:"rejected",title:"Marked not a match",description:"You excluded these observations from the relationship map; original evidence is retained.",icon:"×"}
  ];
@@ -173,6 +174,10 @@ function evidence(d){
   const details=el("details"),summary=el("summary","","Show captured stdout and errors");
   details.append(summary,el("p","muted","Standard output — "+(step.stdout_file||"")),el("pre","",step.stdout||"(no stdout)"),
    el("p","muted","Error output — "+(step.stderr_file||"")),el("pre","",step.stderr||"(no stderr)"));
+  if(step.report_file){
+   details.append(el("p","muted","Additional Markdown profile report — "+step.report_file),
+     el("pre","",step.report||"(No report preview. See saved Markdown file.)"));
+  }
   row.append(head,details);list.append(row);
  });
 }

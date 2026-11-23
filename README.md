@@ -1,8 +1,53 @@
+## Tool Manager and deeper research (v0.7)
+
+Open the local dashboard with `reconductor web`, then select **Tool Manager**
+or visit **http://127.0.0.1:8765/tools.html**.
+
+The Tool Manager displays a curated catalog with installation status,
+descriptions, official upstream links, the installation method, and an optional
+**Test startup** action. Selecting a tool only stages it: the operator must
+check an explicit approval box and enter `INSTALL` before a download or
+installation begins. Installation progress and failures are shown in the UI.
+
+- **SpiderFoot:** managed user-local clone of the official upstream **v4.0**
+  tag, dedicated Python virtual environment, user-local command launcher.
+- **Sherlock, Maigret, Social Analyzer, theHarvester:** isolated installs using
+  `pipx`, if present on the VM.
+- **ExifTool:** detected and documented, but manual `sudo apt install
+  libimage-exiftool-perl` is needed; Reconductor does not silently elevate
+  privileges.
+- **Wayback History:** a built-in adapter requiring no installation.
+
+Third-party installers execute code obtained from external projects. Review
+their source and trustworthiness before approving installation. Installs may
+fail due to missing `git`, `pipx`, build libraries, Python incompatibility,
+or an unsupported CPU. The dashboard distinguishes **detected** (executable
+on PATH) from **ready** (startup test completed successfully); an installation
+may finish with a warning if its help command fails.
+
+Deep research enhancements:
+- Username pivots add Social Analyzer candidate scanning (when installed),
+  while Maigret can save its richer public-profile Markdown report.
+- A user-provided domain in Deep mode also checks Internet Archive CDX for
+  bounded historical snapshots.
+- The **Evidence & tools** view can show the captured Maigret report; sources
+  and profile candidates remain unverified until reviewed.
+- Name-only searches still begin with SpiderFoot; these additions do not
+  independently resolve a person's identity, enumerate private relatives,
+  or guarantee comprehensive coverage.
+
+All research scans still require separate, explicit acknowledgment that
+network requests leave the VM. Installs and web lookups use the VM's normal
+internet connection; **Reconductor does not provide VPN/Tor or DNS leak
+protection**. Existing investigations and Markdown files remain supported.
+
+---
+
 # Reconductor
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.6:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.7:** Local-first CLI and localhost dashboard. No hosted cloud service or automatic upload of investigation files. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 

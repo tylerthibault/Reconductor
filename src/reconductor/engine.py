@@ -84,7 +84,11 @@ def tasks_for(clue: dict[str, Any], depth: str) -> list[dict[str, Any]]:
     if kind in ("name", "email"):
         return [{"tool": "spiderfoot", "argv": ["spiderfoot", "-s", value, "-u", "passive", "-o", "json"],
                  "timeout": timeout, "network": True}]
-    return core.plan(kind, value, depth)
+    tasks = core.plan(kind, value, depth)
+    if kind == "domain" and depth == "deep":
+        tasks.append({"tool": "wayback", "argv": ["wayback", value],
+                      "timeout": 25, "network": True})
+    return tasks
 
 
 def preview(clues: list[dict[str, Any]], depth: str, location: str | None = None) -> str:
@@ -269,7 +273,17 @@ def run(
                                  "maximum": budget["tasks"], "timeout": task["timeout"]})
                 started = time.monotonic()
                 stdout, stderr = "", ""
-                if not shutil.which(tool):
+                if tool == "wayback":
+                    try:
+                        from . import wayback
+                        stdout = wayback.snapshots(clue["value"])
+                        step["exit_code"] = 0
+                        step["state"] = "completed"
+                    except (OSError, ValueError, TimeoutError, Exception) as exc:
+                        stderr = "Internet Archive lookup unavailable: " + str(exc)[:300]
+                        step["exit_code"] = 1
+                        step["state"] = "failed"
+                elif not shutil.which(tool):
                     step["state"] = "skipped_missing"
                     stderr = f"{tool} not found on PATH"
                 else:
@@ -290,6 +304,19 @@ def run(
                         step["state"] = "failed"
                 store.write_capture(folder / rel_stdout, tool, "stdout", stdout)
                 store.write_capture(folder / rel_stderr, tool, "stderr", stderr)
+                # Maigret's Deep Markdown report is preserved as private evidence.
+                # Never treat its profile metadata as independently verified identity.
+                if tool == "maigret" and step["state"] == "completed" and depth == "deep":
+                    reports_dir = folder / "raw" / "results"
+                    if reports_dir.is_dir():
+                        reports = sorted(p for p in reports_dir.glob("*.md") if p.is_file())
+                        if reports:
+                            report_path = f"raw/{stem}.profile-report.md"
+                            store.write_capture(
+                                folder / report_path, tool, "report",
+                                reports[0].read_text(encoding="utf-8", errors="replace")[:600_000],
+                            )
+                            step["report_file"] = report_path
                 step["duration_seconds"] = round(time.monotonic() - started, 2)
                 step["ended_at"] = core.utc_now()
                 if (tool == "spiderfoot" and step["state"] == "completed"

@@ -1,0 +1,56 @@
+body{background:#091322;color:#e9f2ff}
+.tool-shell{min-height:100vh;display:grid;grid-template-columns:242px minmax(0,1fr)}
+.tool-sidebar{background:#0e192a;border-right:1px solid #2f415a;padding:28px 18px;display:flex;flex-direction:column;gap:13px}
+.tool-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.tool-brand>span{font-size:35px;color:#86b9ff}
+.tool-brand strong{display:block;letter-spacing:.15em;font-size:13px}
+.tool-brand small{display:block;letter-spacing:.09em;color:#84a5c8;font-size:9px}
+.tool-sidebar a{display:block;color:#bdd7f2;border:1px solid #35506d;padding:12px;border-radius:8px;text-decoration:none;font-size:12px}
+.tool-sidebar a:hover{background:#263f5b}
+.tool-sidebar-note{margin-top:auto;font-size:11px;line-height:1.55;color:#91abc6}
+.tool-main{min-width:0}
+.tool-header{background:#0e1b2d;border-bottom:1px solid #304158;display:flex;justify-content:space-between;padding:23px 35px;color:#91aecd;font-size:11px;letter-spacing:.1em}
+.tool-content{max-width:1230px;padding:40px 34px 70px;margin:0 auto}
+.tool-content h1{font-size:clamp(26px,3vw,38px);letter-spacing:-.04em;margin:7px 0 13px}
+.tool-intro{color:#b9cee3;font-size:14px;line-height:1.7;max-width:840px}
+.tool-banner{padding:15px 17px;border:1px solid #486388;background:#1b304b;border-radius:9px;color:#cedff3;font-size:13px;margin:19px 0 14px;line-height:1.6}
+.tool-actions{display:flex;align-items:center;gap:20px;margin:15px 0;color:#a9c4df;font-size:12px}
+.tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tool-entry{background:#152339;border:1px solid #354e6b;padding:19px;border-radius:12px;min-width:0}
+.tool-entry-header{display:flex;align-items:start;justify-content:space-between;gap:10px}
+.tool-entry-title{font-size:17px;font-weight:700;color:#eff7ff}
+.tool-entry p{font-size:12px;line-height:1.65;color:#b4c8dc;margin:11px 0 5px}
+.tool-entry .tool-meta{font-size:11px;color:#9dbad6;overflow-wrap:anywhere;margin:8px 0}
+.tool-entry .tool-note{color:#a6b8c9;font-style:italic}
+.tool-status{font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;border:1px solid #55708d;border-radius:15px;color:#bdd8ee;padding:5px 9px;white-space:nowrap}
+.tool-status.detected{border-color:#418a72;color:#b0f1d0;background:#183b34}
+.tool-status.missing{border-color:#986845;color:#ffd4ae;background:#423127}
+.tool-status.manual{border-color:#777b97;color:#c1c7e5}
+.tool-status.built-in{border-color:#3e8ca7;color:#aee9fc}
+.tool-pick{display:flex;gap:9px;align-items:center;color:#d1e6fb;margin-top:13px;font-size:12px;cursor:pointer}
+.tool-pick input{width:17px;height:17px;accent-color:#5a9eff}
+.tool-pick input:disabled{opacity:.5}
+.tool-entry-footer{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:12px}
+.tool-entry-footer a{font-size:12px;color:#9dd3ff;text-decoration:underline;text-underline-offset:3px}
+.tool-entry-footer button{font-size:11px;padding:7px 12px;border-radius:7px;background:#20344c;color:#d7eaff;border:1px solid #4b6783}
+.tool-entry-footer button:hover{background:#365371}
+.tool-test-output{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;line-height:1.6;background:#0d1928;border:1px solid #34506a;border-radius:8px;padding:10px;max-height:130px;overflow:auto;margin:10px 0 0}
+.tool-install-box{background:#132136;border:1px solid #3b5675;border-radius:12px;margin-top:18px;padding:24px}
+.tool-install-box h2{font-size:18px;margin:0 0 6px}
+.tool-install-box p{color:#abc1d7;font-size:12px;line-height:1.6}
+.tool-selected{margin:13px 0;padding:14px;border:1px solid #355573;border-radius:8px;background:#1b2e45;color:#c2e0ff;font-size:12px;line-height:1.7}
+.tool-check{display:flex;align-items:center;gap:10px;margin:15px 0;font-size:13px;color:#e2eefb}
+.tool-check input{width:18px;height:18px;accent-color:#4b9dfb}
+.tool-confirm{display:grid;gap:7px;color:#cce0f3;font-size:12px;margin:12px 0}
+.tool-confirm input{width:100%;padding:12px 14px;background:#071522;border:1px solid #426182;border-radius:7px;color:#f1f8ff}
+.tool-progress{background:#142337;border:1px solid #3d5674;padding:22px;margin-top:20px;border-radius:12px}
+.progress-heading{display:flex;justify-content:space-between}
+.progress-heading h2{font-size:16px;margin:0 0 12px}
+.progress-heading span{font-size:12px;color:#b1d2f3}
+#installLog{padding:15px;background:#081525;border:1px solid #304e6b;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;color:#cbdced;max-height:360px;overflow:auto;font-size:12px;line-height:1.65}
+.tool-result{padding:9px 12px;margin:8px 0;border-radius:8px;background:#1b3048;font-size:12px;color:#c8dff4}
+.tool-result.failed{background:#442827;color:#ffd9c7}
+.tool-result.installed{background:#1e4636;color:#c8fae3}
+.tool-result.warning{background:#493c24;color:#ffe2a9}
+@media(max-width:1050px){.tool-shell{grid-template-columns:1fr}.tool-sidebar{min-height:auto;padding:15px;display:flex;flex-direction:row;align-items:center;flex-wrap:wrap}.tool-brand{margin:0 12px 0 0}.tool-sidebar-note{display:none}.tool-header{padding:16px}.tool-content{padding:23px 16px 44px}}
+@media(max-width:700px){.tool-grid{grid-template-columns:1fr}.tool-content{padding:18px 12px 40px}.tool-install-box{padding:15px}.tool-entry{padding:15px}}

@@ -28,6 +28,8 @@ TOOLS = {
     "spiderfoot": "Passive domain OSINT",
     "theHarvester": "Public domain-source discovery",
     "exiftool": "Local file metadata inspection",
+    "social-analyzer": "Additional username candidate discovery",
+    "wayback": "Built-in Internet Archive snapshot lookup for provided domains",
 }
 DEPTH_TIMEOUTS = {"light": 120, "medium": 300, "deep": 900}
 CASE_ID_PATTERN = re.compile(r"^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$")
@@ -85,7 +87,15 @@ def plan(kind: str, target: str, depth: str) -> list[dict[str, Any]]:
     if kind == "username":
         tasks.append({"tool": "sherlock", "argv": ["sherlock", target], "timeout": timeout, "network": True})
         if depth != "light":
-            tasks.append({"tool": "maigret", "argv": ["maigret", target, "--no-recursion", "--no-autoupdate"], "timeout": timeout, "network": True})
+            maigret_command = ["maigret", target, "--no-recursion", "--no-autoupdate"]
+            if depth == "deep":
+                maigret_command.extend(["--md", "--folderoutput", "results"])
+            tasks.append({"tool": "maigret", "argv": maigret_command, "timeout": timeout, "network": True})
+        if depth == "deep":
+            tasks.append({"tool": "social-analyzer",
+                          "argv": ["social-analyzer", "--cli", "--username", target,
+                                   "--mode", "fast", "--output", "json", "--method", "find"],
+                          "timeout": timeout, "network": True})
     elif kind == "domain":
         # SpiderFoot passive preset is NOT a VPN or guarantee of no target requests.
         tasks.append({"tool": "spiderfoot", "argv": ["spiderfoot", "-s", target, "-u", "passive", "-o", "json"], "timeout": timeout, "network": True})
@@ -100,8 +110,9 @@ def plan(kind: str, target: str, depth: str) -> list[dict[str, Any]]:
 
 def tools_available() -> list[dict[str, str | bool]]:
     return [
-        {"tool": name, "description": desc, "available": bool(shutil.which(name)),
-         "path": shutil.which(name) or ""}
+        {"tool": name, "description": desc,
+         "available": name == "wayback" or bool(shutil.which(name)),
+         "path": "internal" if name == "wayback" else (shutil.which(name) or "")}
         for name, desc in TOOLS.items()
     ]
 

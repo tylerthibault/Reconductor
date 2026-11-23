@@ -14,7 +14,7 @@ import uuid
 import webbrowser
 from urllib.parse import urlsplit
 
-from . import core, engine, findings, networks, reviews
+from . import core, engine, findings, networks, reviews, tool_manager
 from . import markdown_store as store
 
 
@@ -28,6 +28,31 @@ class DashboardState:
         self.lock = threading.RLock()
         self.jobs: dict[str, dict] = {}
         self.active_job: str | None = None
+        self.active_install: str | None = None
+        self.install_jobs: dict[str, dict] = {}
+
+    def run_install(self, job_id: str, tool_ids: list[str]) -> None:
+        def on_event(event: dict) -> None:
+            with self.lock:
+                job = self.install_jobs[job_id]
+                job["events"].append(event)
+                job["events"] = job["events"][-120:]
+        try:
+            results = tool_manager.run_batch(tool_ids, on_event)
+            with self.lock:
+                self.install_jobs[job_id]["results"] = results
+                self.install_jobs[job_id]["status"] = (
+                    "finished" if all(x["state"] in ("installed", "skipped") for x in results)
+                    else "partial"
+                )
+        except BaseException as exc:
+            with self.lock:
+                self.install_jobs[job_id]["status"] = "failed"
+                self.install_jobs[job_id]["error"] = str(exc)[:400]
+        finally:
+            with self.lock:
+                if self.active_install == job_id:
+                    self.active_install = None
 
     def run_job(self, job_id: str, clues: list[dict], depth: str, location: str | None) -> None:
         def progress(event: dict) -> None:
@@ -140,7 +165,8 @@ def handler_for(state: DashboardState):
                 return self._error(403, "Localhost access only.")
             path = urlsplit(self.path).path
             if path in ("/", "/index.html", "/app.js", "/styles.css",
-                        "/network.html", "/network.js", "/network.css"):
+                        "/network.html", "/network.js", "/network.css",
+                        "/tools.html", "/tools.js", "/tools.css"):
                 name = "index.html" if path == "/" else path.lstrip("/")
                 file = STATIC / name
                 if not file.is_file():
@@ -148,9 +174,20 @@ def handler_for(state: DashboardState):
                 body = file.read_bytes()
                 mime = {"index.html": "text/html", "app.js": "text/javascript",
                         "styles.css": "text/css", "network.html": "text/html",
-                        "network.js": "text/javascript", "network.css": "text/css"}[name] + "; charset=utf-8"
+                        "network.js": "text/javascript", "network.css": "text/css",
+                        "tools.html": "text/html", "tools.js": "text/javascript",
+                        "tools.css": "text/css"}[name] + "; charset=utf-8"
                 self._headers(200, mime, len(body))
                 return self.wfile.write(body)
+            if path == "/api/tools":
+                return self._send({"tools": tool_manager.catalog(),
+                                   "platform": "linux" if tool_manager.sys.platform.startswith("linux") else "unsupported"})
+            if path.startswith("/api/tools/jobs/"):
+                job_id = path.removeprefix("/api/tools/jobs/")
+                with state.lock:
+                    job = state.install_jobs.get(job_id)
+                    return self._send({"job": dict(job)} if job else {"error": "Install job not found."},
+                                      200 if job else 404)
             if path == "/api/network-workspaces":
                 return self._send({"workspaces": networks.list_workspaces()})
             if path == "/api/network-people":
@@ -205,6 +242,27 @@ def handler_for(state: DashboardState):
             try:
                 body = self._json_body()
                 path = urlsplit(self.path).path
+                if path == "/api/tools/check":
+                    return self._send(tool_manager.check_tool(body.get("tool")))
+                if path == "/api/tools/install":
+                    if body.get("acknowledge_changes") is not True or body.get("confirm") != "INSTALL":
+                        return self._error(400, "Confirm third-party downloads and enter INSTALL.")
+                    selected = tool_manager.validate_selection(body.get("tools"))
+                    with state.lock:
+                        if state.active_install or state.active_job:
+                            return self._error(409, "Another installation or investigation is already running.")
+                        install_id = uuid.uuid4().hex
+                        state.install_jobs[install_id] = {
+                            "id": install_id, "status": "running", "tools": selected,
+                            "events": [], "results": [], "error": None,
+                        }
+                        state.active_install = install_id
+                    thread = threading.Thread(
+                        target=state.run_install, args=(install_id, selected),
+                        name="reconductor-tool-install", daemon=True,
+                    )
+                    thread.start()
+                    return self._send({"job_id": install_id}, 202)
                 if path == "/api/network-workspaces":
                     with state.lock:
                         workspace = networks.create_workspace(body.get("name"), body.get("description", ""))
@@ -264,8 +322,8 @@ def handler_for(state: DashboardState):
                     if body.get("acknowledge_exposure") is not True or body.get("confirm") != "RUN":
                         return self._error(400, "Live research requires explicit network acknowledgment.")
                     with state.lock:
-                        if state.active_job is not None:
-                            return self._error(409, "An investigation is already running.")
+                        if state.active_job is not None or state.active_install is not None:
+                            return self._error(409, "Another investigation or tool installation is running.")
                         job_id = uuid.uuid4().hex
                         state.jobs[job_id] = {
                             "id": job_id, "status": "running",
@@ -324,7 +382,7 @@ def handler_for(state: DashboardState):
                                 _save_graph(folder, annotations)
                             return self._send({"link": link}, 201)
                 return self._error(404, "Not found.")
-            except (ValueError, TypeError, KeyError, core.ReconductorError) as exc:
+            except (ValueError, TypeError, KeyError, core.ReconductorError, tool_manager.InstallError) as exc:
                 return self._error(400, str(exc)[:300])
             except OSError:
                 return self._error(500, "Unable to read or save local case.")
@@ -335,6 +393,7 @@ def handler_for(state: DashboardState):
 def serve(port: int = 8765, open_browser: bool = True) -> None:
     if not 1 <= port <= 65535:
         raise ValueError("Port must be from 1 to 65535.")
+    tool_manager.ensure_user_path()
     state = DashboardState(port)
     server = ThreadingHTTPServer(("127.0.0.1", port), handler_for(state))
     server.daemon_threads = True
