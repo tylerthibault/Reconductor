@@ -89,7 +89,7 @@ class DashboardTests(unittest.TestCase):
 
     def test_static_assets_served_locally(self):
         self.assertIn(b"RECONDUCTOR",self.req("/"))
-        self.assertIn(b"Relationship",self.req("/app.js"))
+        self.assertIn(b"Graph",self.req("/app.js"))
         self.assertIn(b".sidebar",self.req("/styles.css"))
 
     def test_rejects_wrong_host(self):
