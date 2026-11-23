@@ -34,7 +34,7 @@ def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
     cleaned = re.sub(r"<SFURL>.*?</SFURL>", "", raw, flags=re.IGNORECASE | re.DOTALL).strip()
     category = CATEGORY_RE.search(cleaned)
     site_category = category.group(1).strip()[:60] if category else ""
-    cleaned = CATEGORY_RE.sub("", cleaned).strip(" :-\\t")
+    cleaned = CATEGORY_RE.sub("", cleaned).strip().strip(":-").strip()
     if "account on external site" in name or "social media profile" in name:
         site = cleaned or (urlsplit(url).hostname if url else "Unidentified website")
         return {
