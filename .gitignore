@@ -1,0 +1,20 @@
+# Local environments and credentials
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+.env
+.env.*
+!.env.example
+
+# Never version actual investigations, exports or evidence
+cases/
+reports/
+evidence/
+.reconductor/
+*.sqlite3

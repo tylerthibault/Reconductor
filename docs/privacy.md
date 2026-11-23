@@ -1,0 +1,29 @@
+# Privacy and safety
+
+Reconductor **cannot** conceal your source IP, DNS queries, browser fingerprint, login identity, traffic metadata, or API key usage. External tools use the OSINT VM's current network configuration.
+
+## Before online execution
+
+1. Make sure your VM is isolated from unrelated home/work systems.
+2. Use a separately configured VPN/Tor environment if it is appropriate for your research.
+3. Verify egress routing, DNS, IPv6 and kill-switch failure behavior independently.
+4. Restrict the research scope to publicly available or authorized sources.
+5. Review `reconductor scan ...` dry-run output before execution.
+
+A `--acknowledge-exposure` flag does not verify any of these prerequisites.
+
+## Data handling
+
+Reconductor stores raw outputs and target identifiers **on the local machine**, in private directories. Protect and back up those files; collected data may contain sensitive details about third parties. Never push case folders or API credentials to a public repository. File investigations compute SHA-256 locally and optionally invoke local ExifTool.
+
+The runner does not send case files to an AI service. Some invoked upstream tools may fetch updates or use third-party APIs according to their own configuration; Reconductor does not suppress or audit those requests.
+
+## Evidence quality
+
+A username match is not identity attribution. A missing result is not proof of absence. Reports intentionally summarize tool execution only and require independent review of sources and context.
+
+Reconductor is not designed as a consumer reporting agency or for regulated employment, housing, lending, or similar eligibility decisions.
+
+## Security boundaries
+
+Subprocesses do not use a shell, and inputs are validated before execution. However, external tools and website content are untrusted. Use a least-privilege account, no `sudo`, isolated VM, and verified backups. Never run an autonomous model with unrestricted shell access to these tools.
