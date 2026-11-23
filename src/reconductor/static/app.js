@@ -45,18 +45,77 @@ function tab(name){
  document.querySelectorAll(".tab").forEach(b=>{b.classList.toggle("active",b.dataset.tab===name);b.setAttribute("aria-selected",String(b.dataset.tab===name));});
  if(name==="graph"&&s.graph)requestAnimationFrame(()=>{s.graph.resize();s.graph.fit();});
 }
+function groupFindings(findings){
+ const groups=[
+  {id:"profile",title:"Possible website profiles",description:"Websites that a research tool associated with a username. You need to inspect each profile to establish whether it belongs to the subject.",icon:"↗"},
+  {id:"username",title:"Usernames worth checking",description:"Names that appeared in search results. A shared or similar username is not proof that two accounts belong to one person.",icon:"@"},
+  {id:"other",title:"Other public clues",description:"Additional observations that may help guide the investigation. Check their sources before drawing conclusions.",icon:"◇"}
+ ];
+ for(const group of groups)group.items=findings.filter(f=>(f.category||"other")===group.id);
+ return groups.filter(g=>g.items.length);
+}
+function externalLabel(url){
+ try{
+  const parsed=new URL(url);
+  return (parsed.hostname.replace(/^www\./,"") + parsed.pathname).slice(0,110);
+ }catch{return "View external source";}
+}
+function showResearchGroup(parent,group){
+ const section=el("section","research-group");
+ const heading=el("div","research-heading");
+ const headingText=el("div");
+ headingText.append(el("h3","",group.title),el("p","",group.description));
+ heading.append(headingText,el("span","research-count",String(group.items.length)));
+ section.append(heading);
+ const cards=el("div","research-cards");
+ section.append(cards);
+ const limit=6;
+ const toggle=el("button","show-more");
+ let expanded=false;
+ function drawCards(){
+  cards.replaceChildren();
+  const shown=expanded?group.items:group.items.slice(0,limit);
+  for(const f of shown){
+   const card=el("article","research-card");
+   const icon=el("div","research-icon",group.id==="profile"?(f.display_name||f.value||"?").charAt(0).toUpperCase():group.icon);
+   const content=el("div","research-body");
+   const heading=el("strong","research-name",f.display_name||f.value||"Unnamed finding");
+   content.append(heading);
+   if(f.description && f.description!==f.display_name)content.append(el("p","research-desc",f.description));
+   if(f.url && /^https?:\/\//i.test(f.url)){
+    const address=el("div","research-url",externalLabel(f.url));content.append(address);
+    const link=el("a","research-link","Open possible profile");
+    link.href=f.url;link.rel="noopener noreferrer";link.target="_blank";
+    link.setAttribute("aria-label","Review external source for "+(f.display_name||"observation"));
+    content.append(link);
+   }
+   const source=el("div","research-provenance","Reported by "+(f.tool||"unknown tool")+" · Not verified");
+   content.append(source);
+   const disclosure=el("details","research-evidence");
+   disclosure.append(el("summary","","Why is this shown?"));
+   disclosure.append(el("p","", "A research tool reported this item. The connection to the person under investigation has not been established."));
+   disclosure.append(el("p","", "Saved original output: "+(f.evidence||"Unavailable")));
+   content.append(disclosure);
+   card.append(icon,content);cards.append(card);
+  }
+  if(group.items.length>limit){
+   toggle.textContent=expanded?"Show fewer":"Show all "+group.items.length+" "+(group.id==="profile"?"profiles":"items");
+   toggle.setAttribute("aria-expanded",String(expanded));
+  }
+ }
+ if(group.items.length>limit){
+  toggle.addEventListener("click",()=>{expanded=!expanded;drawCards();});
+  section.append(toggle);
+ }
+ drawCards();
+ parent.append(section);
+}
 function overview(d){
- $("findingsCount").textContent=d.findings.length+" parsed observations";
+ const groups=groupFindings(d.findings||[]);
+ $("findingsCount").textContent=d.findings.length+" unverified observations";
  const found=$("findingsList");found.replaceChildren();
- if(!d.findings.length)found.append(el("p","empty","No recognizable structured findings yet. Review the tool outputs under Evidence & tools."));
- d.findings.forEach(f=>{
-  const row=el("div","finding"),icon=el("div","finding-icon",f.url?"↗":"◇"),copy=el("div");
-  copy.append(el("strong","",f.type||"Observation"),el("div","value",f.value));
-  copy.append(el("small","",f.tool+" · "+f.evidence+" · Unverified"));
-  if(f.url&&/^https?:\/\//i.test(f.url)){
-   const a=el("a","","Open original source");a.href=f.url;a.target="_blank";a.rel="noreferrer noopener";copy.append(document.createTextNode("  "),a);
-  }row.append(icon,copy);found.append(row);
- });
+ if(!d.findings.length)found.append(el("p","empty","No recognizable observations in the captured tool output. This does not mean that no public information exists. Review the original output under Evidence & tools."));
+ for(const group of groups)showResearchGroup(found,group);
  const clues=$("clueList");clues.replaceChildren();
  (d.case.clues||[{kind:d.case.target_type,value:d.case.target}]).forEach(c=>{
   const it=el("div","item");it.append(el("strong","",txt(c.kind).toUpperCase()),el("span","",c.value));clues.append(it);
@@ -65,9 +124,17 @@ function overview(d){
  const cv=$("coverageList");cv.replaceChildren();
  const coverage=d.case.coverage||{digital_footprint:"Legacy scan: not recorded",business_records:"Not searched",property_records:"Not searched",court_records:"Not searched"};
  Object.entries(coverage).forEach(([key,value])=>{const it=el("div","item");it.append(el("strong","",key.replaceAll("_"," ")),el("small","",value));cv.append(it);});
- const issues=$("issueList");issues.replaceChildren();const bad=d.steps.filter(x=>x.state!=="completed");
- if(!bad.length)issues.append(el("div","item","No tool failures recorded."));
- bad.forEach(step=>{const it=el("div","item failure");it.append(el("strong","",step.tool+": "+step.state),el("small","",short(step.stderr||"No diagnostic output captured.",230)));issues.append(it);});
+ const issues=$("issueList");issues.replaceChildren();
+ const unfinished=d.steps.filter(x=>x.state!=="completed");
+ if(!unfinished.length)issues.append(el("div","item","All recorded tool steps finished successfully."));
+ unfinished.forEach(step=>{
+  const item=el("div",step.state==="failed"||step.state==="timeout"?"item failure":"item");
+  const description=(step.state==="pending"||step.state==="running")?
+   "Saved as unfinished. The scan may still be running or may have been interrupted.":
+   step.state==="skipped_missing"?"Tool was not available on this machine.":
+   short(step.stderr||"No diagnostic output captured. Check Evidence & tools.",230);
+  item.append(el("strong","",step.tool+": "+step.state),el("small","",description));issues.append(item);
+ });
 }
 function evidence(d){
  const list=$("toolList");list.replaceChildren();if(!d.steps.length)list.append(el("div","empty","No tool executions recorded."));

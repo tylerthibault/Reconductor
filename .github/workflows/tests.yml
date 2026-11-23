@@ -23,6 +23,8 @@ jobs:
         run: node --check src/reconductor/static/app.js
       - name: Check dashboard confirmation UX
         run: node tests/test_frontend.cjs
+      - name: Check readable research result grouping
+        run: node tests/test_readable_results.cjs
       - name: Smoke test CLI
         run: |
           reconductor --help

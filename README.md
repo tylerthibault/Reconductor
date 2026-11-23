@@ -2,7 +2,7 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.5.1:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.5.2:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
@@ -87,6 +87,8 @@ deliberately bound to `127.0.0.1` only, uses only locally bundled assets,
 and has no cloud dependencies or third-party JavaScript libraries.
 
 Confirmation stays open while you check the network acknowledgment and type `RUN`. Editing a search clue or depth invalidates the plan and requires a new preview.
+
+The main results page now separates **possible website profiles**, **usernames worth checking**, and **other public clues**. It extracts clear website names and usable links from SpiderFoot `<SFURL>` markers, explains what each result means, and keeps the original evidence available under *Evidence & tools*. Results are still **unverified**; a reported username or profile does not establish who controls it.
 
 The dashboard can browse existing cases, surface reviewable SpiderFoot
 structured events and public URLs found in Maigret/Sherlock stdout,

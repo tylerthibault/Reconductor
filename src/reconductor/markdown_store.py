@@ -223,12 +223,12 @@ def sync_vault(folder: Path, record: dict, observations: list[dict] | None = Non
     for obs in (observations or [])[:150]:
         ref = slug("Observations", obs.get("id"))
         refs[str(obs.get("id"))] = ref
-        index.append("- [[" + ref + "|" + safe(obs.get("type")) + ": " + safe(obs.get("value"))[:90] + "]]")
+        index.append("- [[" + ref + "|" + safe(obs.get("type")) + ": " + safe(obs.get("display_name") or obs.get("value"))[:90] + "]]")
         path = folder / (ref + ".md")
         if not path.exists():
             origin = obs.get("evidence", "")
             evidence = ("[[" + str(Path(origin).with_suffix("")) + "]]") if isinstance(origin, str) and origin.startswith("raw/") else "Unavailable"
-            write_private(path, "# " + safe(obs.get("type")) + ": " + safe(obs.get("value")) +
+            write_private(path, "# " + safe(obs.get("type")) + ": " + safe(obs.get("display_name") or obs.get("value")) +
                           "\n\n- **Status:** UNVERIFIED\n- **Tool:** " + safe(obs.get("tool")) +
                           "\n- **Evidence:** " + evidence + "\n- [[Vault|Investigation index]]\n")
     index.extend(["", "## Raw tool output", ""])

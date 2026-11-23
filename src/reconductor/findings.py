@@ -22,6 +22,46 @@ URL_RE = re.compile(r"https?://[^\s<>]+", re.IGNORECASE)
 KEYWORDS = ("username", "user name", "profile", "account", "domain", "internet name", "website", "url", "social")
 SENSITIVE = ("password", "address", "phone", "date of birth", "ssn", "credit card", "private", "credential")
 
+SFURL_RE = re.compile(r"<SFURL>\\s*(https?://[^<\\s]+)\\s*</SFURL>", re.IGNORECASE)
+CATEGORY_RE = re.compile(r"\\s*\\(Category:\\s*([^)]+)\\)", re.IGNORECASE)
+
+
+def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
+    """Convert tool-specific markers into labels, without making identity claims."""
+    name = typ.casefold().strip()
+    tag = SFURL_RE.search(raw)
+    url = _url(tag.group(1)) if tag else (_url(raw) if raw.startswith(("https://", "http://")) else None)
+    cleaned = re.sub(r"<SFURL>.*?</SFURL>", "", raw, flags=re.IGNORECASE | re.DOTALL).strip()
+    category = CATEGORY_RE.search(cleaned)
+    site_category = category.group(1).strip()[:60] if category else ""
+    cleaned = CATEGORY_RE.sub("", cleaned).strip(" :-\\t")
+    if "account on external site" in name or "social media profile" in name:
+        site = cleaned or (urlsplit(url).hostname if url else "Unidentified website")
+        return {
+            "category": "profile", "display_name": site[:100],
+            "description": (site_category.capitalize() + " category" if site_category else "Public profile candidate"),
+            "url": url,
+        }
+    if "username" in name or "user name" in name:
+        return {
+            "category": "username", "display_name": cleaned[:100],
+            "description": "A username observed by a research tool",
+            "url": url,
+        }
+    if name == "reported public url":
+        host = urlsplit(url).hostname if url else None
+        return {
+            "category": "profile", "display_name": (host or "Reported URL")[:100],
+            "description": "Public URL mentioned in tool output",
+            "url": url,
+        }
+    return {
+        "category": "other", "display_name": cleaned[:100],
+        "description": typ[:100],
+        "url": url,
+    }
+
+
 
 def _text(folder: Path, relative: str | None, limit: int = MAX_TEXT) -> str:
     if not relative or not isinstance(relative, str):
@@ -69,7 +109,8 @@ def extract(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
         if any(word in typ.casefold() for word in SENSITIVE):
             return
         value = value.strip()[:500]
-        url = _url(value) if value.startswith(("http://", "https://")) else None
+        display = _display_fields(typ, value)
+        url = display["url"]
         key = (tool, typ.casefold(), (url or value).casefold())
         if key in seen:
             return
@@ -77,6 +118,9 @@ def extract(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
         findings.append({
             "id": "finding:" + _identifier(tool, typ, url or value),
             "type": typ[:80], "value": value, "url": url,
+            "display_name": display["display_name"],
+            "description": display["description"],
+            "category": display["category"],
             "tool": tool, "evidence": ref, "source": source[:300],
             "verification": "unverified", "basis": "tool_observation",
         })
@@ -165,7 +209,7 @@ def graph_data(record: dict[str, Any], findings: list[dict[str, Any]], annotatio
         node(id, str(lead.get("value", "")), "lead", "unverified", evidence=lead.get("origin", ""))
         edge(root, id, "possible lead", "unverified")
     for finding in findings[:80]:
-        node(finding["id"], finding.get("value", ""), "finding", "unverified",
+        node(finding["id"], finding.get("display_name") or finding.get("value", ""), "finding", "unverified",
              evidence=finding.get("evidence"), url=finding.get("url"), tool=finding.get("tool"))
         edge(root, finding["id"], "tool observation", "unverified")
     for person in annotations.get("people", [])[:80]:
