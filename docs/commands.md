@@ -18,6 +18,19 @@ Dry run is default. A live investigation requires `--execute --acknowledge-expos
 
 New case reports include `dossier.md`, `report.md`, `case.json`, and `raw/` evidence files. Official government and worldwide record lookups are not integrated and appear as 'Not searched.'
 
+## Live progress
+
+Both `reconductor scan ... --execute` and
+`reconductor investigate ... --execute` show tool start, heartbeat
+(elapsed time vs. timeout), finished/failed/skipped status and discovered
+candidate-lead counts. The heartbeat updates every five seconds in a
+terminal. A non-interactive session gets periodic log lines. Progress is
+printed on **stderr**, leaving command output and saved case reports separate.
+Use `--no-progress` with either command to disable the indicator.
+
+SpiderFoot does not provide a reliable percentage; progress is based on
+wall-clock time and completed steps only.
+
 ## Scan
 
 ```text

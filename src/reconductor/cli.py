@@ -8,6 +8,7 @@ import sys
 from . import __version__
 from . import core
 from . import engine
+from .progress import TerminalProgress
 
 
 def parser() -> argparse.ArgumentParser:
@@ -37,6 +38,10 @@ def parser() -> argparse.ArgumentParser:
         help="Run the planned commands; otherwise only print the plan.",
     )
     scan.add_argument(
+        "--no-progress", action="store_true",
+        help="Suppress progress messages on stderr.",
+    )
+    scan.add_argument(
         "--acknowledge-exposure", action="store_true",
         help="Required with --execute for network research. Does not provide anonymity.",
     )
@@ -55,6 +60,7 @@ def parser() -> argparse.ArgumentParser:
         help="Maximum number of tool calls and follow-up leads."
     )
     investigate.add_argument("--execute", action="store_true", help="Run the plan instead of previewing it.")
+    investigate.add_argument("--no-progress", action="store_true", help="Suppress progress messages on stderr.")
     investigate.add_argument(
         "--acknowledge-exposure", action="store_true",
         help="Required for live research; does not enable anonymity or VPN protections."
@@ -112,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
             folder, case = core.execute(
                 args.type, target, args.depth,
                 acknowledge_exposure=args.acknowledge_exposure,
+                on_progress=None if args.no_progress else TerminalProgress(),
             )
             print(f"\nCase: {case['id']}")
             print(f"Status: {case['status']}")
@@ -129,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
             folder, case = engine.run(
                 clues, args.depth, location=args.location,
                 acknowledge_exposure=args.acknowledge_exposure,
+                on_progress=None if args.no_progress else TerminalProgress(),
             )
             print(f"\nInvestigation: {case['id']}")
             print(f"Status: {case['status']}")

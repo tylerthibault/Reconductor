@@ -2,7 +2,7 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.2:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.2.1:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
@@ -13,7 +13,7 @@
 - Local case folders with `case.json`, `report.md`, and raw tool logs.
 - Passive-only SpiderFoot preset for domain research; no port scanning or intrusive requests by design.
 - Explicit confirmation required to execute **any network research**.
-- Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
+- Live progress for both `scan` and `investigate`: tool start, elapsed-time heartbeat, timeout and status. Use `--no-progress` to silence.\n- Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
 
@@ -81,6 +81,19 @@ reconductor investigate --name "Jane Doe" --depth medium --execute --acknowledge
 reconductor cases list
 reconductor report CASE_ID
 ```
+
+Live execution now prints a running indicator to the terminal. For example:
+
+```text
+[Reconductor] Case 20261123T123456Z-abcdef12 created; up to 8 tool runs.
+[1/8 max] Starting spiderfoot (timeout 300s)
+  ... spiderfoot still running 00:20 / 05:00 timeout
+[1/8 max] spiderfoot: completed in 00:35
+```
+
+Elapsed time is **not a completion percentage**. Raw tool output is still written
+to the local case folder, not streamed to your screen. Use `--no-progress`
+to suppress informational messages when scripting.
 
 Research budgets, including deduplication and hop limits:
 

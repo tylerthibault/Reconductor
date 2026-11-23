@@ -142,23 +142,59 @@ def _persist(folder: Path, record: dict[str, Any]) -> None:
     os.replace(tmp, folder / "case.json")
 
 
-def _run_tool(argv: list[str], cwd: Path, timeout: int) -> tuple[int, str, str, str]:
-    # No shell. Child process group is killed on timeout.
+def _run_tool(
+    argv: list[str], cwd: Path, timeout: int, *,
+    on_tick=None, tick_seconds: float = 5.0,
+) -> tuple[int, str, str, str]:
+    """Run a tool without a shell; optionally report elapsed time while waiting.
+
+    Communicate() still drains stdout/stderr, so noisy tools cannot deadlock.
+    A timeout or interruption terminates the entire subprocess group.
+    """
     proc = subprocess.Popen(
         argv, cwd=str(cwd), stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, errors="replace", start_new_session=True,
     )
+    started = time.monotonic()
     try:
-        stdout, stderr = proc.communicate(timeout=timeout)
-        return proc.returncode, stdout, stderr, "completed"
+        if on_tick is None:
+            stdout, stderr = proc.communicate(timeout=timeout)
+            return proc.returncode, stdout, stderr, "completed"
+        deadline = started + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(argv, timeout)
+            try:
+                stdout, stderr = proc.communicate(timeout=min(max(tick_seconds, 0.01), remaining))
+                return proc.returncode, stdout, stderr, "completed"
+            except subprocess.TimeoutExpired:
+                if time.monotonic() >= deadline:
+                    raise
+                on_tick(time.monotonic() - started)
     except subprocess.TimeoutExpired:
-        os.killpg(proc.pid, signal.SIGKILL)
+        if proc.poll() is None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         stdout, stderr = proc.communicate()
         return 124, stdout, stderr, "timeout"
+    except BaseException:
+        if proc.poll() is None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        proc.communicate()
+        raise
 
 
-def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: bool = False) -> tuple[Path, dict[str, Any]]:
+def execute(
+    kind: str, raw_target: str, depth: str, *,
+    acknowledge_exposure: bool = False, on_progress=None,
+) -> tuple[Path, dict[str, Any]]:
     target = validate_target(kind, raw_target)
     tasks = plan(kind, target, depth)
     if any(step["network"] for step in tasks) and not acknowledge_exposure:
@@ -167,6 +203,8 @@ def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: boo
         )
     folder, record = _new_case(kind, target, depth)
     _persist(folder, record)
+    if on_progress:
+        on_progress({"event": "case_started", "case_id": record["id"], "maximum": len(tasks)})
     try:
         for index, task in enumerate(tasks, 1):
             tool = task["tool"]
@@ -177,6 +215,9 @@ def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: boo
             }
             record["steps"].append(step)
             _persist(folder, record)
+            if on_progress:
+                on_progress({"event": "step_started", "tool": tool, "index": index,
+                             "maximum": len(tasks), "timeout": task["timeout"]})
             started = time.monotonic()
             out, err = "", ""
             if tool != "sha256" and not shutil.which(tool):
@@ -192,7 +233,15 @@ def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: boo
                 step["exit_code"] = 0
             else:
                 try:
-                    rc, out, err, state = _run_tool(task["argv"], folder / "raw", int(task["timeout"]))
+                    run_options = {}
+                    if on_progress:
+                        run_options["on_tick"] = lambda elapsed: on_progress({
+                            "event": "heartbeat", "tool": tool,
+                            "elapsed": elapsed, "timeout": task["timeout"],
+                        })
+                    rc, out, err, state = _run_tool(
+                        task["argv"], folder / "raw", int(task["timeout"]), **run_options
+                    )
                     step["exit_code"] = rc
                     step["state"] = "completed" if rc == 0 else ("timeout" if state == "timeout" else "failed")
                 except OSError as exc:
@@ -208,6 +257,9 @@ def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: boo
             step["duration_seconds"] = round(time.monotonic() - started, 2)
             step["ended_at"] = utc_now()
             _persist(folder, record)
+            if on_progress:
+                on_progress({"event": "step_finished", "tool": tool, "index": index,
+                             "state": step["state"], "duration": step["duration_seconds"]})
     except (KeyboardInterrupt, Exception):
         record["status"] = "interrupted"
         record["finished_at"] = utc_now()
@@ -221,6 +273,9 @@ def execute(kind: str, raw_target: str, depth: str, *, acknowledge_exposure: boo
     record["finished_at"] = utc_now()
     _persist(folder, record)
     write_report(folder, record)
+    if on_progress:
+        on_progress({"event": "case_finished", "case_id": record["id"],
+                     "status": record["status"]})
     return folder, record
 
 

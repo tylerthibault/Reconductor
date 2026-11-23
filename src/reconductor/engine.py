@@ -208,6 +208,7 @@ def _dossier(folder: Path, record: dict[str, Any]) -> None:
 def run(
     clues: list[dict[str, Any]], depth: str, *,
     location: str | None = None, acknowledge_exposure: bool = False,
+    on_progress=None,
 ) -> tuple[Path, dict[str, Any]]:
     if depth not in BUDGETS:
         raise core.ReconductorError("Unsupported depth.")
@@ -224,6 +225,9 @@ def run(
         "coverage": COVERAGE.copy(), "budget": budget,
     })
     core._persist(folder, record)
+    if on_progress:
+        on_progress({"event": "case_started", "case_id": record["id"],
+                     "maximum": budget["tasks"]})
     queue = deque(clues)
     seen_clues: set[tuple[str, str]] = set()
     seen_tasks: set[tuple[str, str, str]] = set()
@@ -255,6 +259,9 @@ def run(
                 }
                 record["steps"].append(step)
                 core._persist(folder, record)
+                if on_progress:
+                    on_progress({"event": "step_started", "tool": tool, "index": index,
+                                 "maximum": budget["tasks"], "timeout": task["timeout"]})
                 started = time.monotonic()
                 stdout, stderr = "", ""
                 if not shutil.which(tool):
@@ -262,8 +269,14 @@ def run(
                     stderr = f"{tool} not found on PATH"
                 else:
                     try:
+                        run_options = {}
+                        if on_progress:
+                            run_options["on_tick"] = lambda elapsed: on_progress({
+                                "event": "heartbeat", "tool": tool,
+                                "elapsed": elapsed, "timeout": task["timeout"],
+                            })
                         rc, stdout, stderr, status = core._run_tool(
-                            task["argv"], folder / "raw", int(task["timeout"])
+                            task["argv"], folder / "raw", int(task["timeout"]), **run_options
                         )
                         step["exit_code"] = rc
                         step["state"] = "completed" if rc == 0 else ("timeout" if status == "timeout" else "failed")
@@ -285,7 +298,14 @@ def run(
                             continue
                         record["leads"].append(candidate)
                         queue.append(candidate)
+                        if on_progress:
+                            on_progress({"event": "lead_discovered", "kind": candidate["kind"],
+                                         "count": len(record["leads"]), "maximum": budget["leads"]})
                 core._persist(folder, record)
+                if on_progress:
+                    on_progress({"event": "step_finished", "tool": tool,
+                                 "index": index, "state": step["state"],
+                                 "duration": step["duration_seconds"]})
     except BaseException:
         record["status"] = "interrupted"
         record["finished_at"] = core.utc_now()
@@ -300,4 +320,7 @@ def run(
     record["finished_at"] = core.utc_now()
     core._persist(folder, record)
     _dossier(folder, record)
+    if on_progress:
+        on_progress({"event": "case_finished", "case_id": record["id"],
+                     "status": record["status"]})
     return folder, record
