@@ -1,5 +1,19 @@
 # Command reference
 
+## Interactive terminal menu
+
+Run `reconductor` in an interactive terminal, or use
+`reconductor menu` explicitly. Choose New Investigation to enter a full
+name, username, email, domain or local file, choose a depth, preview planned
+commands, then decide whether to execute.
+
+No network call runs without two deliberate confirmations: `y` and the
+exact text `RUN`. Local file inspection requires a separate `y` confirmation.
+
+The menu also provides Previous Cases, Installed Tools, Diagnostics, Help,
+and Quit. The existing command-line interface is preserved for scripting.
+The bare command prints help when stdin/stdout are not terminals.
+
 ## Entry points
 
 - `reconductor --help` — global commands

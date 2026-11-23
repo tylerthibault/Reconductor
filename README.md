@@ -2,11 +2,11 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.2.1:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.3:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
-- `reconductor --help` plus contextual help for every subcommand.
+- Interactive numbered terminal menu; `reconductor --help` plus contextual help for every subcommand.
 - **Light / Medium / Deep** presets for username, domain, and local file investigations, plus multi-clue research.
 - Tool discovery (`doctor`, `tools list`) without reinstalling anything.
 - Safe subprocess calls (no shell interpolation), time limits, per-tool output and exit codes.
@@ -17,6 +17,31 @@
 - Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
+
+## Interactive terminal menu (v0.3)
+
+Launch `reconductor` from a terminal to open a simple numbered menu:
+
+```text
+  RECONDUCTOR
+  [1] New investigation
+  [2] Previous cases
+  [3] Installed tools
+  [4] System diagnostics
+  [H] Help
+  [Q] Quit
+```
+
+The menu collects starting clues, selects Light/Medium/Deep depth, previews
+the planned tool commands, and **asks for explicit confirmation** before any
+network research. While tools execute, the terminal prints live elapsed-time
+indicators and status. You can reopen saved case reports and review help.
+
+`reconductor menu` explicitly launches the menu even from a non-interactive
+invocation. Normal automation commands (`reconductor investigate`,
+`reconductor scan`, `reconductor report`) remain unchanged.
+Running `reconductor` without arguments in a piped/non-interactive session
+prints the CLI help instead.
 
 ## Installation (Trace Labs / Debian)
 

@@ -8,6 +8,7 @@ import sys
 from . import __version__
 from . import core
 from . import engine
+from . import menu
 from .progress import TerminalProgress
 
 
@@ -19,6 +20,8 @@ def parser() -> argparse.ArgumentParser:
     )
     root.add_argument("--version", action="version", version=f"Reconductor {__version__}")
     commands = root.add_subparsers(dest="command", title="commands")
+
+    commands.add_parser("menu", help="Open the interactive terminal menu.")
 
     commands.add_parser("doctor", help="Check installed tools and show privacy warnings.")
 
@@ -90,9 +93,13 @@ def main(argv: list[str] | None = None) -> int:
     args_parser = parser()
     args = args_parser.parse_args(argv)
     if not args.command:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            return menu.run_menu()
         args_parser.print_help()
         return 0
     try:
+        if args.command == "menu":
+            return menu.run_menu()
         if args.command == "doctor":
             print(f"Reconductor {__version__}")
             print(f"Case location: {core.cases_root()}")
