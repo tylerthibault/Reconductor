@@ -139,8 +139,8 @@ def _spiderfoot_summary(text: str) -> list[str]:
 
 
 def write_capture(path: Path, tool: str, stream: str, raw: str) -> None:
-    """Wrap every character of decoded stdout/stderr in a Markdown code fence."""
-    if stream not in ("stdout", "stderr"):
+    """Wrap captured stdout, stderr, or generated Markdown reports as evidence."""
+    if stream not in ("stdout", "stderr", "report"):
         raise ValueError("Invalid stream")
     fence = "~" * max(3, max((len(x.group()) for x in re.finditer(r"~+", raw)), default=0) + 1)
     lines = ["---", "reconductor: evidence", "format: markdown-v1", "---", "",
