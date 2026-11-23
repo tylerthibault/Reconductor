@@ -22,8 +22,8 @@ URL_RE = re.compile(r"https?://[^\s<>]+", re.IGNORECASE)
 KEYWORDS = ("username", "user name", "profile", "account", "domain", "internet name", "website", "url", "social")
 SENSITIVE = ("password", "address", "phone", "date of birth", "ssn", "credit card", "private", "credential")
 
-SFURL_RE = re.compile(r"<SFURL>\\s*(https?://[^<\\s]+)\\s*</SFURL>", re.IGNORECASE)
-CATEGORY_RE = re.compile(r"\\s*\\(Category:\\s*([^)]+)\\)", re.IGNORECASE)
+SFURL_RE = re.compile(r"<SFURL>\s*(https?://[^<\s]+)\s*</SFURL>", re.IGNORECASE)
+CATEGORY_RE = re.compile(r"\s*\(Category:\s*([^)]+)\)", re.IGNORECASE)
 
 
 def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
