@@ -2,18 +2,18 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.1:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.2:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
 - `reconductor --help` plus contextual help for every subcommand.
-- **Light / Medium / Deep** presets for username, domain, and local file investigations.
+- **Light / Medium / Deep** presets for username, domain, and local file investigations, plus multi-clue research.
 - Tool discovery (`doctor`, `tools list`) without reinstalling anything.
 - Safe subprocess calls (no shell interpolation), time limits, per-tool output and exit codes.
 - Local case folders with `case.json`, `report.md`, and raw tool logs.
 - Passive-only SpiderFoot preset for domain research; no port scanning or intrusive requests by design.
 - Explicit confirmation required to execute **any network research**.
-- Works without a local AI model. Python standard library only at runtime.
+- Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.\n- Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.\n- Works without a local AI model. Python standard library only at runtime.
 
 ## Installation (Trace Labs / Debian)
 
@@ -57,6 +57,47 @@ reconductor cases list
 reconductor cases show CASE_ID
 reconductor report CASE_ID
 ```
+
+## Rules-based investigations (v0.2)
+
+Provide any combination of known clues. Reconductor selects installed tools
+based on clue type, executes them only when you explicitly opt in, and may
+follow structured SpiderFoot `Username` events into Sherlock/Maigret searches.
+Candidate leads remain **unverified associations**, never identity matches.
+
+```bash
+# Preview a name + username + location investigation (no network activity)
+reconductor investigate --name "Jane Doe" --username janedoe --location "London, UK" --depth medium
+
+# Preview deeper research from multiple clues
+reconductor investigate --name "Jane Doe" --email jane@example.org --domain example.org --depth deep
+
+# Execute only after you have independently reviewed network egress/privacy
+reconductor investigate --name "Jane Doe" --depth medium --execute --acknowledge-exposure
+
+# View case and dossier locally (replace CASE_ID)
+reconductor cases list
+reconductor report CASE_ID
+```
+
+Research budgets, including deduplication and hop limits:
+
+| Depth | Maximum tool runs | New candidate leads | Follow-up hops |
+|---|---:|---:|---:|
+| Light | 2 | 0 | 0 |
+| Medium | 8 | 3 | 1 |
+| Deep | 16 | 8 | 2 |
+
+SpiderFoot's passive module setting is not a promise of no outbound traffic
+or perfect anonymity. Tools may require their own configuration.
+
+**Worldwide framework, limited coverage:** the person investigation currently
+uses SpiderFoot for names and emails, Sherlock/Maigret for usernames, and
+SpiderFoot/theHarvester for domains. Official business, property, and court
+record adapters are **not installed** and these dossier sections explicitly
+show "Not searched." `--location` is stored only as contextual information;
+it does **not** filter queries or validate an identity. There is currently no
+cross-tool entity resolution or verified identity attribution.
 
 ## Depth presets
 

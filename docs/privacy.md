@@ -27,3 +27,9 @@ Reconductor is not designed as a consumer reporting agency or for regulated empl
 ## Security boundaries
 
 Subprocesses do not use a shell, and inputs are validated before execution. However, external tools and website content are untrusted. Use a least-privilege account, no `sudo`, isolated VM, and verified backups. Never run an autonomous model with unrestricted shell access to these tools.
+
+## Automated lead expansion (v0.2)
+
+Automated follow-ups come only from narrowly recognized structured SpiderFoot events, with explicit search budgets and provenance. Candidate profiles are **not merged** into a confirmed person's identity. A discovered username does not establish who controls it, even when several sites show that username. A possible subdomain lead must remain under the domain originally searched.
+
+The dossier excludes exact residential addresses, full birth dates, and account information from its extracted summaries, but raw upstream tool output may still contain sensitive material. Protect the case folder and manually review outputs before sharing. Source completeness and regional record coverage are not guaranteed. 

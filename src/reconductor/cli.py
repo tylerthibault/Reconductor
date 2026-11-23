@@ -7,6 +7,7 @@ import sys
 
 from . import __version__
 from . import core
+from . import engine
 
 
 def parser() -> argparse.ArgumentParser:
@@ -38,6 +39,25 @@ def parser() -> argparse.ArgumentParser:
     scan.add_argument(
         "--acknowledge-exposure", action="store_true",
         help="Required with --execute for network research. Does not provide anonymity.",
+    )
+
+
+    investigate = commands.add_parser(
+        "investigate", help="Rules-based, multi-clue investigation with bounded lead follow-ups."
+    )
+    investigate.add_argument("--name", dest="names", action="append", help="Full name (repeatable).")
+    investigate.add_argument("--username", dest="usernames", action="append", help="Public username (repeatable).")
+    investigate.add_argument("--email", dest="emails", action="append", help="Known email address (repeatable).")
+    investigate.add_argument("--domain", dest="domains", action="append", help="Known domain (repeatable).")
+    investigate.add_argument("--location", help="City/region/country as context only; not yet queried.")
+    investigate.add_argument(
+        "--depth", choices=["light", "medium", "deep"], default="light",
+        help="Maximum number of tool calls and follow-up leads."
+    )
+    investigate.add_argument("--execute", action="store_true", help="Run the plan instead of previewing it.")
+    investigate.add_argument(
+        "--acknowledge-exposure", action="store_true",
+        help="Required for live research; does not enable anonymity or VPN protections."
     )
 
     cases = commands.add_parser("cases", help="Inspect cases stored on this computer.")
@@ -98,6 +118,25 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Saved locally at: {folder}")
             for step in case["steps"]:
                 print(f"  {step['tool']}: {step['state']} (exit={step['exit_code']})")
+            return 0 if case["status"] == "completed" else 3
+        if args.command == "investigate":
+            clues = engine.normalize_clues(args.names, args.usernames, args.emails, args.domains)
+            print(engine.preview(clues, args.depth, args.location))
+            if not args.execute:
+                print("\nDRY RUN: no tools executed and no network requests made.")
+                print("Add --execute --acknowledge-exposure to run this research.")
+                return 0
+            folder, case = engine.run(
+                clues, args.depth, location=args.location,
+                acknowledge_exposure=args.acknowledge_exposure,
+            )
+            print(f"\nInvestigation: {case['id']}")
+            print(f"Status: {case['status']}")
+            print(f"Discovered candidate leads: {len(case['leads'])} (unverified)")
+            print(f"Tool runs: {len(case['steps'])}")
+            print(f"Dossier: {folder / 'dossier.md'}")
+            for step in case["steps"]:
+                print(f"  {step['tool']} [{step['clue_kind']}]: {step['state']}")
             return 0 if case["status"] == "completed" else 3
         if args.command == "cases":
             if args.cases_action == "list":

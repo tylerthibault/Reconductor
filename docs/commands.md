@@ -10,7 +10,7 @@
 - `reconductor cases --help` — local case management
 - `reconductor report --help` — saved reports
 
-## Scan
+## Rules-based investigate\n\n`reconductor investigate --help` explains how to pass repeatable `--name`, `--username`, `--email`, and `--domain` clues. An optional `--location` is case context only.\n\nDry run is default. A live investigation requires `--execute --acknowledge-exposure`. A deterministic queue chooses tools for each clue and only auto-follows SpiderFoot structured username events and related subdomains. All discovered usernames are unverified candidates. Budgets: Light 2 calls/0 new leads, Medium 8 calls/3 leads/1 hop, Deep 16 calls/8 leads/2 hops. Duplicate clues are skipped.\n\nNew case reports include `dossier.md`, `report.md`, `case.json`, and `raw/` evidence files. Official government and worldwide record lookups are not integrated and appear as 'Not searched.'\n\n## Scan
 
 ```text
 reconductor scan {username,domain,file} TARGET [--depth {light,medium,deep}]
@@ -44,4 +44,4 @@ Set `RECONDUCTOR_HOME` to move case storage. Do not put it in a Git checkout or 
 
 ## Current limitations
 
-No results correlation, automatic identity matching, PDF export, daemon, scheduling, GUI, local LLM or cloud AI. Tool flags may vary between distro releases. Check `tool --help` when a command returns a nonzero exit code. SpiderFoot is invoked with its passive preset, not with active infrastructure scanning.
+No verified cross-source identity correlation, official worldwide registry adapters, PDF export, daemon, scheduling, GUI, local LLM or cloud AI. Tool flags may vary between distro releases. Check `tool --help` when a command returns a nonzero exit code. SpiderFoot is invoked with its passive preset, not with active infrastructure scanning.
