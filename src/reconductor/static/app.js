@@ -162,7 +162,16 @@ function setup(){
  $("closeDialog").addEventListener("click",()=>$("newDialog").close());$("closePerson").addEventListener("click",()=>$("personDialog").close());
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.tab)));
  $("previewButton").addEventListener("click",async()=>{try{$("formError").textContent="";const p=await api("/api/preview",formData());$("planPreview").textContent=p.plan;$("planPreview").hidden=false;$("executionControls").hidden=false;}catch(e){$("formError").textContent=e.message;}});
- $("newForm").addEventListener("input",()=>{$("planPreview").hidden=true;$("executionControls").hidden=true;});
+ $("newForm").addEventListener("input",event=>{
+  // Confirmation controls belong to the form, but editing them doesn't change the research plan.
+  if(event.target.closest("#executionControls"))return;
+  // Changing the clues or depth invalidates the preview and requires fresh consent.
+  $("planPreview").hidden=true;
+  $("executionControls").hidden=true;
+  $("networkAck").checked=false;
+  $("runConfirm").value="";
+ });
+ $("newForm").addEventListener("submit",event=>event.preventDefault());
  $("startButton").addEventListener("click",async()=>{if(!$("networkAck").checked||$("runConfirm").value!=="RUN"){$("formError").textContent="Acknowledge network exposure and type RUN.";return;}
   try{const r=await api("/api/jobs",Object.assign(formData(),{acknowledge_exposure:true,confirm:"RUN"}));s.job=r.job_id;$("newDialog").close();$("jobBar").hidden=false;await pollJob();s.timer=setInterval(pollJob,1600);}catch(e){$("formError").textContent=e.message;}
  });

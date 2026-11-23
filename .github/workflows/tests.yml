@@ -21,6 +21,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate local dashboard JavaScript
         run: node --check src/reconductor/static/app.js
+      - name: Check dashboard confirmation UX
+        run: node tests/test_frontend.cjs
       - name: Smoke test CLI
         run: |
           reconductor --help
