@@ -25,6 +25,53 @@ SENSITIVE = ("password", "address", "phone", "date of birth", "ssn", "credit car
 SFURL_RE = re.compile(r"<SFURL>\s*(https?://[^<\s]+)\s*</SFURL>", re.IGNORECASE)
 CATEGORY_RE = re.compile(r"\s*\(Category:\s*([^)]+)\)", re.IGNORECASE)
 
+# Curated *website descriptions*, not claims about any particular user.
+# Matching is by known host or exact site title; no external requests are made.
+SITE_SUMMARIES = {
+    "pravda.me": "A Mastodon-based social networking community; profiles may contain posts and follows.",
+    "7cups.com": "An emotional-support platform where people can seek peer support or volunteer as listeners.",
+    "bandcamp.com": "A music marketplace and community for artists, labels, and listeners.",
+    "codewars.com": "A programming practice community with coding challenges and public user profiles.",
+    "discogs.com": "A music-release database and marketplace with collector and seller profiles.",
+    "disqus.com": "A commenting platform used across websites; profiles may show public discussions.",
+    "flipboard.com": "A news and article-curation platform for sharing and collecting stories.",
+    "giphy.com": "A GIF and short-animation sharing platform with creator and channel profiles.",
+    "github.com": "A code-hosting and software collaboration platform with repositories and public activity.",
+    "gitlab.com": "A software collaboration and code-hosting platform.",
+    "reddit.com": "A discussion community organized into topic-based forums.",
+    "linkedin.com": "A professional networking and employment-profile platform.",
+    "instagram.com": "A social platform centered on photos, videos, and creator profiles.",
+    "youtube.com": "A video-sharing platform with public channels and content.",
+    "tiktok.com": "A short-form video platform with creator profiles.",
+    "pinterest.com": "A visual discovery and bookmarking platform.",
+    "medium.com": "A writing and publishing platform with author profiles.",
+    "dev.to": "A software-development blogging and discussion community.",
+    "stackoverflow.com": "A programming Q&A website with contributor profiles.",
+    "soundcloud.com": "An audio-sharing community for music and other recordings.",
+    "x.com": "A social network for short posts and public discussions.",
+    "twitter.com": "A legacy domain for the X social network.",
+    "facebook.com": "A social networking website with profiles, groups, and pages.",
+}
+
+
+def site_summary(title: str, url: str | None) -> str:
+    """Describe a known service; unknown services are explicitly marked unknown."""
+    host = ""
+    if url:
+        try:
+            host = (urlsplit(url).hostname or "").casefold().removeprefix("www.")
+        except ValueError:
+            pass
+    for domain, description in SITE_SUMMARIES.items():
+        if host == domain or host.endswith("." + domain):
+            return description
+    lowered = title.strip().casefold().removeprefix("www.")
+    for domain, description in SITE_SUMMARIES.items():
+        if lowered == domain or lowered == domain.split(".")[0]:
+            return description
+    return "Website purpose is not cataloged locally. Review the website before interpreting this result."
+
+
 
 def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
     """Convert tool-specific markers into labels, without making identity claims."""
@@ -40,24 +87,28 @@ def _display_fields(typ: str, raw: str) -> dict[str, str | None]:
         return {
             "category": "profile", "display_name": site[:100],
             "description": (site_category.capitalize() + " category" if site_category else "Public profile candidate"),
+            "site_summary": site_summary(site, url),
             "url": url,
         }
     if "username" in name or "user name" in name:
         return {
             "category": "username", "display_name": cleaned[:100],
             "description": "A username observed by a research tool",
+            "site_summary": "",
             "url": url,
         }
     if name == "reported public url":
         host = urlsplit(url).hostname if url else None
         return {
             "category": "profile", "display_name": (host or "Reported URL")[:100],
-            "description": "Public URL mentioned in tool output",
+            "description": "Public URL mentioned in tool output; not an established identity match",
+            "site_summary": site_summary(host or "", url),
             "url": url,
         }
     return {
         "category": "other", "display_name": cleaned[:100],
         "description": typ[:100],
+        "site_summary": site_summary(cleaned, url) if url else "",
         "url": url,
     }
 
@@ -120,6 +171,12 @@ def extract(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
             "type": typ[:80], "value": value, "url": url,
             "display_name": display["display_name"],
             "description": display["description"],
+            "site_summary": display.get("site_summary") or "",
+            "match_basis": (
+                "tool URL mention — no identity confirmation"
+                if tool in ("sherlock", "maigret")
+                else "SpiderFoot candidate — site account ownership unknown"
+            ),
             "category": display["category"],
             "tool": tool, "evidence": ref, "source": source[:300],
             "verification": "unverified", "basis": "tool_observation",
@@ -209,9 +266,13 @@ def graph_data(record: dict[str, Any], findings: list[dict[str, Any]], annotatio
         node(id, str(lead.get("value", "")), "lead", "unverified", evidence=lead.get("origin", ""))
         edge(root, id, "possible lead", "unverified")
     for finding in findings[:80]:
-        node(finding["id"], finding.get("display_name") or finding.get("value", ""), "finding", "unverified",
+        if finding.get("review") == "not_a_match":
+            continue
+        manual_match = finding.get("review") == "matches"
+        status = "operator_marked_match" if manual_match else "unverified"
+        node(finding["id"], finding.get("display_name") or finding.get("value", ""), "finding", status,
              evidence=finding.get("evidence"), url=finding.get("url"), tool=finding.get("tool"))
-        edge(root, finding["id"], "tool observation", "unverified")
+        edge(root, finding["id"], "operator-marked match" if manual_match else "tool observation", status)
     for person in annotations.get("people", [])[:80]:
         if isinstance(person, dict) and isinstance(person.get("id"), str):
             node(person["id"], str(person.get("name", "Person")), "person", "user_added",

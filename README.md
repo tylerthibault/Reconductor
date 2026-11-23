@@ -18,6 +18,27 @@
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
 
+## Readable site descriptions and manual profile reviews (v0.6.1)
+
+Investigation results now display short descriptions of known websites
+(e.g., Codewars, Bandcamp, 7 Cups, and Pravda.me). These describe what the
+**website** does; they do not imply the person searched uses that service.
+Unknown sites are labeled as uncataloged instead of guessing their purpose.
+
+Each observation has **Matches person**, **Not a match**, and **Undo review**
+controls. Decisions are stored as private Markdown in the case's
+`reviews.md` file and survive dashboard reloads. An item marked **Not a
+match** remains in the evidence list but is excluded from the case relationship
+map. A **Matches person** decision is explicitly labeled as an **operator
+assessment**, not independent verification. No rejected item is removed from
+the raw tool evidence, and reviews do not automatically alter existing
+investigation runs or enrich the separate Network Workspaces.
+
+**Important:** A name-only search currently starts with SpiderFoot. The
+application does not yet independently establish account ownership, and
+Sherlock/Maigret URL mentions should be treated as candidate observations,
+not proof that an account belongs to the named person.
+
 ## Independent relationship networks (v0.6)
 
 The local dashboard now has a **Relationship networks** link in its sidebar.

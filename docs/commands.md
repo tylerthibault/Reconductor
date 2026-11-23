@@ -125,3 +125,15 @@ Set `RECONDUCTOR_HOME` to move case storage. Do not put it in a Git checkout or 
 ## Current limitations
 
 No verified cross-source identity correlation, official worldwide registry adapters, PDF export, daemon, scheduling, GUI, local LLM or cloud AI. Tool flags may vary between distro releases. Check `tool --help` when a command returns a nonzero exit code. SpiderFoot is invoked with its passive preset, not with active infrastructure scanning.
+
+## Review candidate website profiles (v0.6.1)
+
+Open an investigation in the local dashboard and browse **Research results,
+explained**. Known sites have short service descriptions. Choose **Matches
+person** or **Not a match** for each observation. You can undo either
+decision. These are manual judgments, never automatic identity verification.
+
+Reviews are recorded in the private Markdown file `reviews.md` inside
+the case folder. Rejected observations remain readable in the result list
+but are excluded from the case graph; original tool evidence is preserved.
+

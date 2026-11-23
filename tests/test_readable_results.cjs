@@ -23,4 +23,15 @@ assert.equal(context.externalLabel("https://www.codewars.com/users/janedoe"),"co
 assert.match(source,/f\.display_name\|\|f\.value/);
 assert.match(source,/Reported by .*Not verified/);
 assert.match(source,/getElementById/);
+assert.match(source,/site-summary/);
+assert.match(source,/review-actions/);
+assert.match(source,/not_a_match/);
+const reviewed=context.groupFindings([
+ {category:"profile",display_name:"Valid",review:"matches"},
+ {category:"profile",display_name:"Wrong",review:"not_a_match"}
+]);
+assert.equal(reviewed.length,2);
+assert.equal(reviewed[0].items[0].display_name,"Valid");
+assert.equal(reviewed[1].id,"rejected");
+assert.equal(reviewed[1].items[0].display_name,"Wrong");
 console.log("Readable research grouping: passed");

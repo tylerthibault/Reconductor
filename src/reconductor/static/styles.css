@@ -35,3 +35,17 @@ dialog{width:min(600px,calc(100vw - 28px));max-height:90vh;overflow:auto;border:
 /* Link from case research to the independent network editor. */
 .network-nav{display:block;text-align:center;padding:10px 12px;margin-top:9px;border:1px solid #375777;border-radius:9px;background:#162943;color:#bfddfa;text-decoration:none;font-size:12px;font-weight:650}
 .network-nav:hover,.network-nav:focus-visible{background:#284563;color:#fff}
+
+
+/* Site context and explicit per-observation operator review. */
+.site-summary{color:#d1e3f3;font-size:13px;line-height:1.55;margin:8px 0 4px;max-width:650px}
+.review-state{display:inline-block;color:#a9bad0;background:#243248;border:1px solid #3b4e66;border-radius:15px;padding:4px 9px;font-size:11px;margin-top:8px}
+.review-state.accepted{color:#b1efc9;background:#1d4335;border-color:#3c8061}
+.review-state.rejected{color:#ffcfbc;background:#4a302d;border-color:#81574d}
+.review-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0 4px}
+.review-button{background:#1d334b;border:1px solid #49698b;border-radius:8px;padding:8px 12px;color:#d4eaff;font-size:12px;font-weight:650}
+.review-button:hover{background:#2a4969}
+.review-button.matches{background:#1b473b;border-color:#44816b;color:#c0f4db}
+.review-button.not_a_match{background:#3c292b;border-color:#815052;color:#ffd0ce}
+.review-button.unreviewed{background:#263449;border-color:#54708d}
+.review-button:disabled{opacity:.5;cursor:wait}

@@ -123,6 +123,35 @@ class DashboardTests(unittest.TestCase):
         self.assertTrue(any(e["status"]=="user_added" for e in d["graph"]["edges"]))
         self.assertEqual((self.folder/"graph.md").stat().st_mode & 0o777,0o600)
 
+    def test_review_profile_from_local_dashboard(self):
+        from reconductor import markdown_store as store
+        cid=self.case["id"]
+        reference="raw/01-spiderfoot.stdout.md"
+        store.write_capture(self.folder/reference,"spiderfoot","stdout",json.dumps([
+            {"type":"Account on External Site",
+             "data":"Bandcamp (Category: music) <SFURL>https://bandcamp.com/janedoe</SFURL>"}
+        ]))
+        self.case["steps"]=[{"tool":"spiderfoot","stdout_file":reference}]
+        core._persist(self.folder,self.case)
+        original=self.req("/api/cases/"+cid)
+        item=original["findings"][0]
+        self.assertIn("music",item["site_summary"].lower())
+        self.assertEqual(item["review"],"unreviewed")
+        self.req("/api/cases/"+cid+"/reviews",{"finding_id":item["id"],"decision":"not_a_match"})
+        revised=self.req("/api/cases/"+cid)
+        self.assertEqual(revised["findings"][0]["review"],"not_a_match")
+        self.assertFalse(any(n["id"]==item["id"] for n in revised["graph"]["nodes"]))
+        self.req("/api/cases/"+cid+"/reviews",{"finding_id":item["id"],"decision":"matches"})
+        revised=self.req("/api/cases/"+cid)
+        self.assertEqual(revised["graph"]["nodes"][-1]["status"],"operator_marked_match")
+        self.assertEqual((self.folder/"reviews.md").stat().st_mode & 0o777,0o600)
+
+    def test_review_requires_session_token(self):
+        with self.assertRaises(HTTPError) as raised:
+            self.req("/api/cases/"+self.case["id"]+"/reviews",
+                     {"finding_id":"finding:"+"0"*20,"decision":"matches"},authorized=False)
+        self.assertEqual(raised.exception.code,403)
+
     def test_cli_web_command_help(self):
         args=cli.parser().parse_args(["web","--no-browser","--port","8767"])
         self.assertEqual(args.port,8767)

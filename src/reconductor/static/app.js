@@ -47,12 +47,25 @@ function tab(name){
 }
 function groupFindings(findings){
  const groups=[
-  {id:"profile",title:"Possible website profiles",description:"Websites that a research tool associated with a username. You need to inspect each profile to establish whether it belongs to the subject.",icon:"↗"},
-  {id:"username",title:"Usernames worth checking",description:"Names that appeared in search results. A shared or similar username is not proof that two accounts belong to one person.",icon:"@"},
-  {id:"other",title:"Other public clues",description:"Additional observations that may help guide the investigation. Check their sources before drawing conclusions.",icon:"◇"}
+  {id:"profile",title:"Possible website profiles",description:"Candidate accounts are not established identity matches. Inspect details and mark each as matching, not matching, or undecided.",icon:"↗"},
+  {id:"username",title:"Usernames worth checking",description:"Name similarities alone are weak evidence. Follow independent public links before treating these as the same person.",icon:"@"},
+  {id:"other",title:"Other public clues",description:"Additional leads reported by tools; confirm before using them to build relationships.",icon:"◇"},
+  {id:"rejected",title:"Marked not a match",description:"You excluded these observations from the relationship map; original evidence is retained.",icon:"×"}
  ];
- for(const group of groups)group.items=findings.filter(f=>(f.category||"other")===group.id);
+ for(const group of groups)group.items=findings.filter(f=>
+    group.id==="rejected"?f.review==="not_a_match":
+    f.review!=="not_a_match"&&(f.category||"other")===group.id);
  return groups.filter(g=>g.items.length);
+}
+async function reviewFinding(finding,decision){
+ try{
+  await api("/api/cases/"+encodeURIComponent(s.id)+"/reviews",{
+   finding_id:finding.id,decision
+  });
+  await choose(s.id);
+  flash(decision==="matches"?"Marked as matching by you (not independently verified).":
+        decision==="not_a_match"?"Removed false match from the case graph.":"Review decision cleared.");
+ }catch(error){flash(error.message);}
 }
 function externalLabel(url){
  try{
@@ -82,6 +95,10 @@ function showResearchGroup(parent,group){
    const heading=el("strong","research-name",f.display_name||f.value||"Unnamed finding");
    content.append(heading);
    if(f.description && f.description!==f.display_name)content.append(el("p","research-desc",f.description));
+   if(f.site_summary)content.append(el("p","site-summary",f.site_summary));
+   const reviewStatus=f.review==="matches"?"Marked matching by you":
+     f.review==="not_a_match"?"Marked not a match":"Not reviewed";
+   content.append(el("div","review-state"+(f.review==="matches"?" accepted":f.review==="not_a_match"?" rejected":""),reviewStatus));
    if(f.url && /^https?:\/\//i.test(f.url)){
     const address=el("div","research-url",externalLabel(f.url));content.append(address);
     const link=el("a","research-link","Open possible profile");
@@ -91,9 +108,20 @@ function showResearchGroup(parent,group){
    }
    const source=el("div","research-provenance","Reported by "+(f.tool||"unknown tool")+" · Not verified");
    content.append(source);
+   const actions=el("div","review-actions");
+   for(const [decision,label] of [["matches","Matches person"],["not_a_match","Not a match"],["unreviewed","Undo review"]]){
+    if(decision==="unreviewed"&&(!f.review||f.review==="unreviewed"))continue;
+    if(decision===f.review)continue;
+    const button=el("button","review-button "+decision,label);
+    button.type="button";
+    button.addEventListener("click",async()=>{button.disabled=true;await reviewFinding(f,decision);});
+    actions.append(button);
+   }
+   content.append(actions);
    const disclosure=el("details","research-evidence");
    disclosure.append(el("summary","","Why is this shown?"));
-   disclosure.append(el("p","", "A research tool reported this item. The connection to the person under investigation has not been established."));
+   disclosure.append(el("p","", f.match_basis||"A research tool reported this item. The connection to the person under investigation has not been established."));
+   disclosure.append(el("p","", "Your decisions are manual assessments, not independent verification."));
    disclosure.append(el("p","", "Saved original output: "+(f.evidence||"Unavailable")));
    content.append(disclosure);
    card.append(icon,content);cards.append(card);
@@ -112,7 +140,7 @@ function showResearchGroup(parent,group){
 }
 function overview(d){
  const groups=groupFindings(d.findings||[]);
- $("findingsCount").textContent=d.findings.length+" unverified observations";
+ $("findingsCount").textContent=d.findings.length+" observations · "+d.findings.filter(f=>f.review&&f.review!=="unreviewed").length+" reviewed";
  const found=$("findingsList");found.replaceChildren();
  if(!d.findings.length)found.append(el("p","empty","No recognizable observations in the captured tool output. This does not mean that no public information exists. Review the original output under Evidence & tools."));
  for(const group of groups)showResearchGroup(found,group);

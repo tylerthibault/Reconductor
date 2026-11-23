@@ -14,7 +14,7 @@ import uuid
 import webbrowser
 from urllib.parse import urlsplit
 
-from . import core, engine, findings, networks
+from . import core, engine, findings, networks, reviews
 from . import markdown_store as store
 
 
@@ -125,7 +125,9 @@ def handler_for(state: DashboardState):
 
         def _case_details(self, case_id: str) -> dict:
             folder, record = core.get_case(case_id)
-            observations = findings.extract(folder, record)
+            observations = reviews.apply(
+                findings.extract(folder, record), reviews.load(folder)
+            )
             return {
                 "case": record,
                 "findings": observations,
@@ -283,6 +285,12 @@ def handler_for(state: DashboardState):
                     folder, record = core.get_case(parts[3])
                     action = parts[4]
                     with state.lock:
+                        if action == "reviews":
+                            change = reviews.set_review(
+                                folder, body.get("finding_id"), body.get("decision"),
+                                findings.extract(folder, record),
+                            )
+                            return self._send({"review": change})
                         annotations = _read_graph(folder)
                         if action == "people":
                             name = body.get("name")
