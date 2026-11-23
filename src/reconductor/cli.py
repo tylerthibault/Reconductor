@@ -22,6 +22,10 @@ def parser() -> argparse.ArgumentParser:
     commands = root.add_subparsers(dest="command", title="commands")
 
     commands.add_parser("menu", help="Open the interactive terminal menu.")
+    web = commands.add_parser("web", help="Start private local browser dashboard (no Coolify).")
+    web.add_argument("--port", type=int, default=8765, help="Localhost TCP port (default: 8765).")
+    web.add_argument("--no-browser", action="store_true", help="Do not open a browser automatically.")
+
 
     commands.add_parser("doctor", help="Check installed tools and show privacy warnings.")
 
@@ -100,6 +104,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "menu":
             return menu.run_menu()
+        if args.command == "web":
+            from .webapp import serve
+            serve(port=args.port, open_browser=not args.no_browser)
+            return 0
         if args.command == "doctor":
             print(f"Reconductor {__version__}")
             print(f"Case location: {core.cases_root()}")

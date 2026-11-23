@@ -1,5 +1,19 @@
 # Command reference
 
+## Local web dashboard
+
+`reconductor web` runs the localhost-only case dashboard at
+`http://127.0.0.1:8765`. Requires no Coolify and no cloud inference.
+The application provides New Investigation, Case History, Observations,
+Evidence & Tool Diagnostics, and an editable Relationship Map.
+
+The map includes operator-supplied clues, candidate leads, observed public
+links, and user-added person nodes. Manually drawn associations are saved in
+`graph.json` under the local case folder and never assert confirmed identity.
+
+`reconductor web --no-browser` suppresses automatic browser opening;
+`reconductor web --port PORT` chooses a different localhost port.
+
 ## Interactive terminal menu
 
 Run `reconductor` in an interactive terminal, or use

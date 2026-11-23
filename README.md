@@ -2,7 +2,7 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.3:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.4:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
@@ -17,6 +17,44 @@
 - Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
+
+## Local browser dashboard (v0.4)
+
+Run this on the **Trace Labs OSINT VM itself**, not on Coolify:
+
+```bash
+cd ~/Documents/Reconductor
+git pull
+source .venv/bin/activate
+python -m pip install -e .
+reconductor web
+```
+
+Open **http://127.0.0.1:8765** in the VM's browser. The dashboard is
+deliberately bound to `127.0.0.1` only, uses only locally bundled assets,
+and has no cloud dependencies or third-party JavaScript libraries.
+
+The dashboard can browse existing cases, surface reviewable SpiderFoot
+structured events and public URLs found in Maigret/Sherlock stdout,
+display STDERR diagnostic messages, and create new investigations.
+It provides an interactive draggable relationship graph, the ability to add
+person nodes and draw manually labeled connections, and real-time
+investigation status.
+
+All graph associations are unverified until corroborated by a human.
+Manual graph annotations are saved privately in each case folder's
+`graph.json`, never uploaded to GitHub. Original case JSON/raw tool
+outputs remain untouched.
+
+**Scope notes:** The dashboard extracts only certain recognizable evidence
+types from upstream outputs; incomplete parsing is not proof of no findings.
+It does not yet provide verified identity resolution, person-location
+matching, or official worldwide public-record adapters.
+The application is not accessible over the LAN; use your existing RDP
+session to view its browser, rather than opening a public network port.
+
+`reconductor web --no-browser` avoids automatically launching a browser.
+`reconductor web --port 8766` selects another local port. Ctrl+C stops it.
 
 ## Interactive terminal menu (v0.3)
 

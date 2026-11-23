@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Reconductor — Investigation Workspace</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-icon">◎</div><div><strong>RECONDUCTOR</strong><small>INVESTIGATION WORKSPACE</small></div></div>
+      <button class="primary full" id="newCase">＋ New investigation</button>
+      <div class="sidebar-section"><span>YOUR CASES</span><button class="iconbutton" id="refreshCases" title="Refresh cases" aria-label="Refresh cases">↻</button></div>
+      <nav id="caseList" aria-label="Previous investigations"><p class="muted">Loading cases…</p></nav>
+      <div class="sidebar-bottom"><span class="local-dot"></span> Local server only <small>127.0.0.1 · No cloud sync</small></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumb">WORKSPACE <span>/</span> <strong id="breadcrumbCase">Overview</strong></div><div class="server-pill"><span class="local-dot"></span> LOCAL SESSION</div></header>
+      <section id="welcome" class="welcome">
+        <div class="welcome-mark">◉</div><p class="eyebrow">YOUR INVESTIGATION WORKSPACE</p><h1>Follow the evidence.<br><span>Not assumptions.</span></h1>
+        <p class="muted">Open a saved case to explore observations, source evidence and possible connections in an interactive graph. Nothing is uploaded to a cloud service.</p>
+        <button class="primary" id="welcomeNew">＋ Start investigation</button>
+      </section>
+      <section id="workspace" hidden>
+        <div class="case-header"><div><div class="eyebrow" id="caseId"></div><h1 id="caseTitle">Investigation</h1><div class="case-meta"><span id="caseDate"></span><span id="caseDepth"></span><span id="caseStatus" class="status-pill"></span></div></div><button class="outline" id="newCaseTop">＋ New case</button></div>
+        <div class="metrics"><div class="metric"><span>TOOL RUNS</span><strong id="mTools">0</strong><small>Execution attempts</small></div><div class="metric"><span>OBSERVATIONS</span><strong id="mFindings">0</strong><small>Unverified findings</small></div><div class="metric"><span>CANDIDATE LEADS</span><strong id="mLeads">0</strong><small>Not confirmed identities</small></div></div>
+        <div class="tabs" role="tablist" aria-label="Case views"><button class="tab active" data-tab="overview">Overview</button><button class="tab" data-tab="graph">Relationship map</button><button class="tab" data-tab="evidence">Evidence & tools</button></div>
+        <section id="tab-overview" class="tab-content">
+          <div class="notice"><b>Identity not verified.</b> These are tool observations and possible relationships, not confirmed matches. The original files remain in this case's private folder.</div>
+          <div class="content-grid"><div class="panel"><div class="panel-heading"><h2>Observed public information</h2><span id="findingsCount"></span></div><div id="findingsList" class="findings-list"></div></div><div class="side-stack"><div class="panel"><div class="panel-heading"><h2>Investigation clues</h2></div><div id="clueList" class="stacked"></div></div><div class="panel"><div class="panel-heading"><h2>Source coverage</h2></div><div id="coverageList" class="stacked"></div></div><div class="panel"><div class="panel-heading"><h2>Tool issues</h2></div><div id="issueList" class="stacked"></div></div></div></div>
+        </section>
+        <section id="tab-graph" class="tab-content" hidden>
+          <div class="notice">Dashed connections indicate <b>unverified</b> leads or observations. Added relationships are user-entered and do not establish identity.</div>
+          <div class="graph-layout"><div class="graph-wrap"><div class="graph-toolbar"><span>RELATIONSHIP MAP</span><div><button id="fitGraph" class="mini">Fit</button><button id="addPerson" class="mini">＋ Person</button></div></div><canvas id="graph" aria-label="Interactive investigation relationship graph"></canvas><div class="graph-hint">Drag nodes to arrange · Scroll to zoom · Click a node to inspect · Connect nodes manually</div></div><aside class="inspector"><h2>Node inspector</h2><div id="nodeDetails" class="muted">Select a node on the graph to inspect its evidence and create a connection.</div><div class="legend"><span><i class="dot person"></i> Person / case</span><span><i class="dot clue"></i> Starting clue</span><span><i class="dot lead"></i> Possible lead</span><span><i class="dot finding"></i> Tool observation</span></div></aside></div>
+          <div class="panel node-table"><div class="panel-heading"><h2>All graph nodes</h2><small>Accessible text alternative to the graph</small></div><div id="graphNodeList" class="node-items"></div></div>
+        </section>
+        <section id="tab-evidence" class="tab-content" hidden><div class="panel"><div class="panel-heading"><h2>Tool execution & diagnostics</h2></div><div id="toolList" class="tool-list"></div></div></section>
+      </section>
+    </main>
+  </div>
+  <div id="jobBar" class="jobbar" hidden><div><b id="jobLabel">Investigation running</b><small id="jobDetail">Starting tools…</small></div><span class="spinner"></span><button class="mini" id="jobDismiss">Hide</button></div>
+  <dialog id="newDialog"><form id="newForm" novalidate><div class="modal-head"><div><p class="eyebrow">RECONDUCTOR</p><h2>New investigation</h2><p class="muted">Provide what you know. Leave unknown fields blank.</p></div><button class="iconbutton" type="button" id="closeDialog" aria-label="Close">✕</button></div><div class="formgrid"><label>Full name<input name="name" placeholder="Jane Doe" autocomplete="off"></label><label>Username<input name="username" placeholder="janedoe" autocomplete="off"></label><label>Email address<input name="email" placeholder="jane@example.org" type="email" autocomplete="off"></label><label>Domain<input name="domain" placeholder="example.org" autocomplete="off"></label><label class="wide">Location context <small>(not searched yet)</small><input name="location" placeholder="City, region, country" autocomplete="off"></label><label class="wide">Investigation depth<select name="depth"><option value="light">Light — initial public footprint</option><option value="medium" selected>Medium — bounded follow-up</option><option value="deep">Deep — expanded follow-up</option></select></label></div><button type="button" id="previewButton" class="outline full">Preview tool plan</button><pre id="planPreview" class="plan" hidden></pre><div id="executionControls" class="execution-controls" hidden><div class="warning">Live research sends requests through the VM's current internet connection. Reconductor does not provide VPN, Tor or DNS-leak protection.</div><label class="check"><input type="checkbox" id="networkAck"> I understand network requests will leave this machine.</label><label>Type RUN to authorize execution<input id="runConfirm" placeholder="RUN" autocomplete="off"></label><button class="primary full" id="startButton" type="button">Run investigation</button></div><p id="formError" class="error" role="alert"></p></form></dialog>
+  <dialog id="personDialog"><form id="personForm"><div class="modal-head"><div><p class="eyebrow">RELATIONSHIP MAP</p><h2>Add person node</h2><p class="muted">This adds a local note, not a verified identity.</p></div><button class="iconbutton" id="closePerson" type="button">✕</button></div><label>Display name<input name="name" maxlength="90" required placeholder="Person name or label"></label><label>Note (optional)<textarea name="note" maxlength="500" rows="3" placeholder="Why this person might be relevant"></textarea></label><button class="primary full" type="submit">Add to graph</button><p class="error" id="personError"></p></form></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
