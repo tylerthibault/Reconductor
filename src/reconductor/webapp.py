@@ -15,6 +15,7 @@ import webbrowser
 from urllib.parse import urlsplit
 
 from . import core, engine, findings
+from . import markdown_store as store
 
 
 STATIC = Path(__file__).resolve().parent / "static"
@@ -61,10 +62,9 @@ def _read_graph(folder: Path) -> dict:
 
 
 def _save_graph(folder: Path, data: dict) -> None:
-    path = folder / "graph.json"
-    tmp = folder / ".graph.json.tmp"
-    core._write_private(tmp, json.dumps(data, indent=2) + "\n")
-    tmp.replace(path)
+    record = core.get_case(folder.name)[1]
+    refs = store.sync_vault(folder, record, findings.extract(folder, record), data)
+    store.write_graph(folder, data, refs)
 
 
 def handler_for(state: DashboardState):

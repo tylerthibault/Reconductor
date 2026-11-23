@@ -121,7 +121,7 @@ class DashboardTests(unittest.TestCase):
         d=self.req("/api/cases/"+cid)
         self.assertTrue(any(n["id"]==person["id"] for n in d["graph"]["nodes"]))
         self.assertTrue(any(e["status"]=="user_added" for e in d["graph"]["edges"]))
-        self.assertEqual((self.folder/"graph.json").stat().st_mode & 0o777,0o600)
+        self.assertEqual((self.folder/"graph.md").stat().st_mode & 0o777,0o600)
 
     def test_cli_web_command_help(self):
         args=cli.parser().parse_args(["web","--no-browser","--port","8767"])

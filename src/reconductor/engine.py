@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from . import core
+from . import markdown_store as store
 
 NAME_RE = re.compile(r"^[^<>\x00-\x1f]{3,160}$")
 EMAIL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._%+\-]{0,63}@[^@\s]+$")
@@ -203,6 +204,10 @@ def _dossier(folder: Path, record: dict[str, Any]) -> None:
     ])
     core._write_private(folder / "dossier.md", "\n".join(lines))
     core._write_private(folder / "report.md", "\n".join(lines))
+    from . import findings
+    observations = findings.extract(folder, record)
+    graph = store.load_graph(folder)
+    store.sync_vault(folder, record, observations, graph)
 
 
 def run(
@@ -248,8 +253,8 @@ def run(
                 tool = task["tool"]
                 index = len(record["steps"]) + 1
                 stem = f"{index:02d}-{tool.lower()}"
-                rel_stdout = f"raw/{stem}.stdout.txt"
-                rel_stderr = f"raw/{stem}.stderr.txt"
+                rel_stdout = f"raw/{stem}.stdout.md"
+                rel_stderr = f"raw/{stem}.stderr.md"
                 step = {
                     "tool": tool, "clue_kind": clue["kind"], "clue": clue["value"],
                     "origin": clue["origin"], "state": "pending",
@@ -283,8 +288,8 @@ def run(
                     except OSError as exc:
                         stderr = str(exc)
                         step["state"] = "failed"
-                core._write_private(folder / rel_stdout, stdout)
-                core._write_private(folder / rel_stderr, stderr)
+                store.write_capture(folder / rel_stdout, tool, "stdout", stdout)
+                store.write_capture(folder / rel_stderr, tool, "stderr", stderr)
                 step["duration_seconds"] = round(time.monotonic() - started, 2)
                 step["ended_at"] = core.utc_now()
                 if (tool == "spiderfoot" and step["state"] == "completed"

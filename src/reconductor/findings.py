@@ -13,6 +13,7 @@ from urllib.parse import urlsplit, urlunsplit
 from typing import Any
 
 from . import core
+from . import markdown_store as store
 
 MAX_TEXT = 1_500_000
 MAX_EVENTS = 350
@@ -31,8 +32,10 @@ def _text(folder: Path, relative: str | None, limit: int = MAX_TEXT) -> str:
     resolved = (folder / path).resolve()
     if folder.resolve() not in resolved.parents or not resolved.is_file():
         return ""
-    with resolved.open("rb") as stream:
-        return stream.read(limit).decode("utf-8", errors="replace")
+    try:
+        return store.read_capture(resolved, limit)
+    except (OSError, ValueError):
+        return ""
 
 
 def _url(value: str) -> str | None:
@@ -129,15 +132,8 @@ def step_previews(folder: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def load_annotations(folder: Path) -> dict[str, Any]:
-    path = folder / "graph.json"
     try:
-        data = json.loads(path.read_text("utf-8"))
-        if not isinstance(data, dict):
-            return {"people": [], "links": []}
-        people = data.get("people", [])
-        links = data.get("links", [])
-        return {"people": people if isinstance(people, list) else [],
-                "links": links if isinstance(links, list) else []}
+        return store.load_graph(folder)
     except (FileNotFoundError, ValueError, OSError):
         return {"people": [], "links": []}
 

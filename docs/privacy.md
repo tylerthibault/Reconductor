@@ -33,3 +33,13 @@ Subprocesses do not use a shell, and inputs are validated before execution. Howe
 Automated follow-ups come only from narrowly recognized structured SpiderFoot events, with explicit search budgets and provenance. Candidate profiles are **not merged** into a confirmed person's identity. A discovered username does not establish who controls it, even when several sites show that username. A possible subdomain lead must remain under the domain originally searched.
 
 The dossier excludes exact residential addresses, full birth dates, and account information from its extracted summaries, but raw upstream tool output may still contain sensitive material. Protect the case folder and manually review outputs before sharing. Source completeness and regional record coverage are not guaranteed. 
+
+## Markdown vault storage
+
+New research results are stored locally as Markdown, including readable
+metadata blocks and full captured tool output in code fences. This does not
+sanitize or hide sensitive information in raw outputs. Obsidian vaults and
+backups containing case files must remain private. Graph links and entity
+notes represent unverified observations unless a researcher has independently
+corroborated them. Markdown migration keeps the former JSON/TXT sources
+separately in a private legacy-backups folder.

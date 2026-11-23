@@ -9,6 +9,7 @@ from . import __version__
 from . import core
 from . import engine
 from . import menu
+from . import markdown_store as store
 from .progress import TerminalProgress
 
 
@@ -72,6 +73,12 @@ def parser() -> argparse.ArgumentParser:
         "--acknowledge-exposure", action="store_true",
         help="Required for live research; does not enable anonymity or VPN protections."
     )
+
+    migration = commands.add_parser(
+        "migrate-markdown", help="Convert a legacy case to Markdown with a separate local backup."
+    )
+    migration.add_argument("case_id", nargs="?", help="Legacy case ID to convert.")
+    migration.add_argument("--all", action="store_true", help="Convert all legacy cases.")
 
     cases = commands.add_parser("cases", help="Inspect cases stored on this computer.")
     cases_sub = cases.add_subparsers(dest="cases_action", required=True)
@@ -161,6 +168,28 @@ def main(argv: list[str] | None = None) -> int:
             for step in case["steps"]:
                 print(f"  {step['tool']} [{step['clue_kind']}]: {step['state']}")
             return 0 if case["status"] == "completed" else 3
+        if args.command == "migrate-markdown":
+            if (bool(args.case_id) == bool(args.all)):
+                raise core.ReconductorError("Specify one CASE_ID or --all, not both.")
+            records = core.list_cases() if args.all else [core.get_case(args.case_id)[1]]
+            converted, skipped, errors = 0, 0, 0
+            for record in records:
+                folder = core.cases_root() / record["id"]
+                try:
+                    changed, backup = store.migrate_case(
+                        folder, record, core.home() / "legacy-backups"
+                    )
+                    if changed:
+                        converted += 1
+                        print(f"Converted {record['id']} to Markdown; original backup: {backup}")
+                    else:
+                        skipped += 1
+                        print(f"Already Markdown: {record['id']}")
+                except (OSError, ValueError) as exc:
+                    errors += 1
+                    print(f"Could not migrate {record['id']}: {exc}", file=sys.stderr)
+            print(f"Markdown migration: {converted} converted, {skipped} skipped, {errors} errors.")
+            return 3 if errors else 0
         if args.command == "cases":
             if args.cases_action == "list":
                 cases = core.list_cases()

@@ -20,6 +20,7 @@ from typing import Any
 from uuid import uuid4
 
 from . import __version__
+from . import markdown_store as store
 
 TOOLS = {
     "sherlock": "Public username search",
@@ -137,9 +138,7 @@ def _write_private(path: Path, text: str) -> None:
 
 
 def _persist(folder: Path, record: dict[str, Any]) -> None:
-    tmp = folder / ".case.json.tmp"
-    _write_private(tmp, json.dumps(record, indent=2, ensure_ascii=False) + "\n")
-    os.replace(tmp, folder / "case.json")
+    store.write_case(folder, record)
 
 
 def _run_tool(
@@ -248,10 +247,10 @@ def execute(
                     err = str(exc)
                     step["state"] = "failed"
             stem = f"{index:02d}-{tool.lower()}"
-            stdout_file = folder / "raw" / f"{stem}.stdout.txt"
-            stderr_file = folder / "raw" / f"{stem}.stderr.txt"
-            _write_private(stdout_file, out)
-            _write_private(stderr_file, err)
+            stdout_file = folder / "raw" / f"{stem}.stdout.md"
+            stderr_file = folder / "raw" / f"{stem}.stderr.md"
+            store.write_capture(stdout_file, tool, "stdout", out)
+            store.write_capture(stderr_file, tool, "stderr", err)
             step["stdout_file"] = str(stdout_file.relative_to(folder))
             step["stderr_file"] = str(stderr_file.relative_to(folder))
             step["duration_seconds"] = round(time.monotonic() - started, 2)
@@ -304,6 +303,10 @@ def write_report(folder: Path, record: dict[str, Any]) -> None:
         "All output was stored locally in this case directory.", "",
     ])
     _write_private(folder / "report.md", "\n".join(lines))
+    from . import findings
+    observations = findings.extract(folder, record)
+    graph = store.load_graph(folder)
+    store.sync_vault(folder, record, observations, graph)
 
 
 def get_case(case_id: str) -> tuple[Path, dict[str, Any]]:
@@ -311,9 +314,9 @@ def get_case(case_id: str) -> tuple[Path, dict[str, Any]]:
         raise ReconductorError("Invalid case ID.")
     folder = cases_root() / case_id
     try:
-        data = json.loads((folder / "case.json").read_text(encoding="utf-8"))
-    except (FileNotFoundError, ValueError) as exc:
-        raise ReconductorError("Case not found or its case.json is unreadable.") from exc
+        data = store.load_case(folder)
+    except (FileNotFoundError, ValueError, OSError) as exc:
+        raise ReconductorError("Case not found or its case.md/case.json is unreadable.") from exc
     return folder, data
 
 

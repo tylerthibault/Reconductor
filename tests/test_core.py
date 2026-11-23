@@ -65,11 +65,11 @@ class ExecutionTests(unittest.TestCase):
             process.assert_not_called()
         self.assertEqual(record["status"], "completed")
         self.assertEqual(len(core.list_cases()), 1)
-        raw = (folder / "raw/01-sha256.stdout.txt").read_text()
+        raw = (folder / "raw/01-sha256.stdout.md").read_text()
         self.assertIn(hashlib.sha256(b"hello").hexdigest(), raw)
         self.assertTrue((folder / "report.md").exists())
         self.assertEqual(folder.stat().st_mode & 0o777, 0o700)
-        self.assertEqual((folder / "case.json").stat().st_mode & 0o777, 0o600)
+        self.assertEqual((folder / "case.md").stat().st_mode & 0o777, 0o600)
 
     def test_missing_tool_is_reported(self):
         with mock.patch("reconductor.core.shutil.which", return_value=None):
@@ -78,7 +78,7 @@ class ExecutionTests(unittest.TestCase):
             )
         self.assertEqual(record["status"], "no_results")
         self.assertEqual(record["steps"][0]["state"], "skipped_missing")
-        self.assertTrue((folder / "raw/01-sherlock.stderr.txt").exists())
+        self.assertTrue((folder / "raw/01-sherlock.stderr.md").exists())
 
     def test_case_traversal_rejected(self):
         with self.assertRaises(core.ReconductorError):

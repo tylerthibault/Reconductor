@@ -2,7 +2,7 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.4:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.5:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
@@ -10,13 +10,65 @@
 - **Light / Medium / Deep** presets for username, domain, and local file investigations, plus multi-clue research.
 - Tool discovery (`doctor`, `tools list`) without reinstalling anything.
 - Safe subprocess calls (no shell interpolation), time limits, per-tool output and exit codes.
-- Local case folders with `case.json`, `report.md`, and raw tool logs.
+- Local Markdown case vaults with `case.md`, `report.md`, linked notes, and raw Markdown evidence.
 - Passive-only SpiderFoot preset for domain research; no port scanning or intrusive requests by design.
 - Explicit confirmation required to execute **any network research**.
 - Live progress for both `scan` and `investigate`: tool start, elapsed-time heartbeat, timeout and status. Use `--no-progress` to silence.
 - Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
+
+## Markdown-first research vault (v0.5)
+
+All **new investigations** are written as Markdown files in the local case
+folder. You can open the case folder directly as an Obsidian vault or browse
+it with any Markdown editor. No database or Coolify instance is needed.
+
+```text
+~/.local/share/reconductor/cases/CASE_ID/
+  Vault.md                 # Obsidian-friendly index and wiki-links
+  case.md                  # Case status, clues, steps, structured state
+  report.md                # Human-readable report
+  dossier.md               # Investigation dossier, if applicable
+  graph.md                 # User-created people/relationship notes
+  Clues/*.md               # One Markdown note per starting clue
+  Leads/*.md               # One Markdown note per candidate lead
+  Observations/*.md        # Parsed public observations, if any
+  People/*.md              # People manually added in the GUI, if any
+  raw/*.stdout.md          # Complete decoded tool output, in code fences
+  raw/*.stderr.md          # Complete decoded error output, in code fences
+```
+
+The raw Markdown evidence files include the **complete captured decoded text**
+as a fenced code block, including the tool's original JSON when applicable.
+SpiderFoot output also receives an optional human-readable event summary.
+The readable summaries never replace the original output. Raw evidence can
+contain sensitive personal information; never publish your case folders
+unreviewed.
+
+`case.md` and `graph.md` embed readable, formatted JSON *inside the
+Markdown file* to preserve Reconductor's exact structured state. The UI
+reads and writes these files directly; it does not create separate new
+`case.json` or `graph.json` files. Reconductor-generated indexes and
+metadata are regenerated, so put your personal notes in separate Markdown
+files instead of modifying their generated sections.
+
+**Older v0.1–v0.4 cases are still supported as-is.** To convert a specific
+existing case, explicitly run:
+
+```bash
+reconductor migrate-markdown CASE_ID
+# Or convert all older investigations:
+reconductor migrate-markdown --all
+```
+
+Before removing any old case files, this command creates an independent
+local backup under
+`~/.local/share/reconductor/legacy-backups/CASE_ID/`.
+Only after the Markdown case and evidence round-trip correctly does it
+remove legacy `.json` and `.txt` files from the active case. The backup
+retains the originals until you choose what to do with them.
+Do not convert while an investigation is running.
 
 ## Local browser dashboard (v0.4)
 
@@ -43,8 +95,7 @@ investigation status.
 
 All graph associations are unverified until corroborated by a human.
 Manual graph annotations are saved privately in each case folder's
-`graph.json`, never uploaded to GitHub. Original case JSON/raw tool
-outputs remain untouched.
+`graph.json`, never uploaded to GitHub. Existing legacy cases are left untouched unless you explicitly migrate them.
 
 **Scope notes:** The dashboard extracts only certain recognizable evidence
 types from upstream outputs; incomplete parsing is not proof of no findings.

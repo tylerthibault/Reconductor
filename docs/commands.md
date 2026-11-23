@@ -1,5 +1,21 @@
 # Command reference
 
+## Markdown case vault and explicit migration
+
+Every new case stores metadata and complete captured tool output in
+Markdown. The output evidence contains a readable code fence for the
+original decoded text; links from `Vault.md` connect notes and raw files
+for Obsidian's graph view.
+
+`reconductor migrate-markdown CASE_ID` converts one legacy case.
+`reconductor migrate-markdown --all` converts each legacy case.
+A separate local backup under `RECONDUCTOR_HOME/legacy-backups`
+preserves the former JSON, TXT and previous report files. Existing legacy
+cases remain accessible without conversion.
+
+`reconductor report CASE_ID --json` still *prints* JSON when requested
+for scripting, but it does not create a JSON file for new cases.
+
 ## Local web dashboard
 
 `reconductor web` runs the localhost-only case dashboard at
@@ -44,7 +60,7 @@ The bare command prints help when stdin/stdout are not terminals.
 
 Dry run is default. A live investigation requires `--execute --acknowledge-exposure`. A deterministic queue chooses tools for each clue and only auto-follows SpiderFoot structured username events and related subdomains. All discovered usernames are unverified candidates. Budgets: Light 2 calls/0 new leads, Medium 8 calls/3 leads/1 hop, Deep 16 calls/8 leads/2 hops. Duplicate clues are skipped.
 
-New case reports include `dossier.md`, `report.md`, `case.json`, and `raw/` evidence files. Official government and worldwide record lookups are not integrated and appear as 'Not searched.'
+New case reports include `dossier.md`, `report.md`, `case.md (legacy: case.json)`, and `raw/` evidence files. Official government and worldwide record lookups are not integrated and appear as 'Not searched.'
 
 ## Live progress
 
@@ -85,8 +101,8 @@ Files:
   case.json
   report.md
   raw/
-    01-tool.stdout.txt
-    01-tool.stderr.txt
+    01-tool.stdout.md
+    01-tool.stderr.md
 ```
 
 Set `RECONDUCTOR_HOME` to move case storage. Do not put it in a Git checkout or synchronized cloud folder.
