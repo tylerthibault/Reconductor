@@ -43,3 +43,17 @@ backups containing case files must remain private. Graph links and entity
 notes represent unverified observations unless a researcher has independently
 corroborated them. Markdown migration keeps the former JSON/TXT sources
 separately in a private legacy-backups folder.
+
+## Relationship network privacy and separation
+
+The network editor runs within the existing localhost-only dashboard. Its
+manual profiles and group links are stored under the private local
+`networks/` directory. Sharing a person profile across workspaces synchronizes
+that person's basic name and shared notes but **never** imports connections,
+evidence or group membership from another workspace.
+
+The "Show other workspaces" action is an explicit request; the current
+workspace graph only draws links saved within that workspace. Group
+clustering shows common explicit affiliations, not inferred acquaintance
+or automatically verified identity. Do not publish personal network files
+or backups without reviewing them for sensitive information.

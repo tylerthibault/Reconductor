@@ -31,3 +31,7 @@ dialog{width:min(600px,calc(100vw - 28px));max-height:90vh;overflow:auto;border:
 .show-more{background:#1a2d43;border:1px solid #395675;color:#c7e2ff;border-radius:8px;margin:13px 0 3px;padding:9px 14px;font-size:13px;font-weight:600}
 .show-more:hover{background:#28425f}
 @media(max-width:740px){.research-group{padding:15px 12px}.research-card{padding:12px}.research-icon{width:35px;height:35px;font-size:17px}.research-heading h3{font-size:16px}}
+
+/* Link from case research to the independent network editor. */
+.network-nav{display:block;text-align:center;padding:10px 12px;margin-top:9px;border:1px solid #375777;border-radius:9px;background:#162943;color:#bfddfa;text-decoration:none;font-size:12px;font-weight:650}
+.network-nav:hover,.network-nav:focus-visible{background:#284563;color:#fff}

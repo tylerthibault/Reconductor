@@ -2,7 +2,7 @@
 
 **A terminal-first OSINT orchestration framework.** Run approved research tools in a predictable order, preserve their raw outputs, and organize local investigation cases.
 
-> **v0.5.2:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
+> **v0.6:** No AI, web dashboard, cloud service, background daemon, or automatic third-party uploads. Network research is **dry-run by default**; only local case files are created on execution.
 
 ## Features
 
@@ -17,6 +17,51 @@
 - Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
+
+## Independent relationship networks (v0.6)
+
+The local dashboard now has a **Relationship networks** link in its sidebar.
+You can also visit **http://127.0.0.1:8765/network.html** once you run
+`reconductor web`.
+
+This is a separate, manual-first feature. It does not run OSINT searches,
+look up private contact information, merge identities, or create automatic
+person-to-person relationships.
+
+- **Create independent workspaces** for family, church, professional circles,
+  or personal research. Each one has its own groups, relationships, Markdown
+  notes, and saved graph positions.
+- **Create shared person profiles** or reuse an existing person in another
+  workspace. Updating a person's basic profile changes the display everywhere,
+  but their relationships remain exclusive to the workspace where added.
+- **Add groups** such as families, organizations, workplaces and schools.
+  Link people to groups using explicit relationship types such as "member of",
+  "works at" and "attends".
+- **Discover visual clusters** when multiple people are explicitly linked to
+  the same group. This only positions them together; it never assumes the
+  people know each other.
+- **Show other memberships on request:** open a person node and choose
+  "Show other workspaces". These other networks are never merged into the
+  current workspace graph.
+- **Drag nodes, pan, zoom and save the map positions** per workspace. The
+  accompanying text view makes the network accessible without using canvas.
+
+On-disk Markdown layout:
+
+~~~text
+~/.local/share/reconductor/networks/
+  People/p-<id>.md                 # Shared profiles, one per person
+  Workspaces/w-<id>/
+    Workspace.md                   # Workspace data and memberships
+    Graph.md                       # Human-readable Obsidian wiki-links
+    Groups/g-<id>.md               # Local group notes
+~~~
+
+All content stays on the VM in Markdown, with complete structured state
+embedded in `Workspace.md` and person notes. This is a first release of the
+network editor, not a fully featured contact-management or evidence-confirmation
+system. Its group clustering uses only manually asserted relationships.
+The investigation case map remains available and unchanged.
 
 ## Markdown-first research vault (v0.5)
 

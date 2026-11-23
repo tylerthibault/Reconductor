@@ -14,7 +14,7 @@ import uuid
 import webbrowser
 from urllib.parse import urlsplit
 
-from . import core, engine, findings
+from . import core, engine, findings, networks
 from . import markdown_store as store
 
 
@@ -137,16 +137,36 @@ def handler_for(state: DashboardState):
             if not self._host_ok():
                 return self._error(403, "Localhost access only.")
             path = urlsplit(self.path).path
-            if path in ("/", "/index.html", "/app.js", "/styles.css"):
+            if path in ("/", "/index.html", "/app.js", "/styles.css",
+                        "/network.html", "/network.js", "/network.css"):
                 name = "index.html" if path == "/" else path.lstrip("/")
                 file = STATIC / name
                 if not file.is_file():
                     return self._error(404, "Static asset not found.")
                 body = file.read_bytes()
                 mime = {"index.html": "text/html", "app.js": "text/javascript",
-                        "styles.css": "text/css"}[name] + "; charset=utf-8"
+                        "styles.css": "text/css", "network.html": "text/html",
+                        "network.js": "text/javascript", "network.css": "text/css"}[name] + "; charset=utf-8"
                 self._headers(200, mime, len(body))
                 return self.wfile.write(body)
+            if path == "/api/network-workspaces":
+                return self._send({"workspaces": networks.list_workspaces()})
+            if path == "/api/network-people":
+                return self._send({"people": networks.list_people()})
+            if path.startswith("/api/network-workspaces/"):
+                parts = path.strip("/").split("/")
+                if len(parts) == 3:
+                    try:
+                        return self._send(networks.workspace_view(parts[2]))
+                    except networks.NetworkError:
+                        return self._error(404, "Workspace not found.")
+            if path.startswith("/api/network-people/"):
+                parts = path.strip("/").split("/")
+                if len(parts) == 4 and parts[3] == "memberships":
+                    try:
+                        return self._send({"memberships": networks.person_memberships(parts[2])})
+                    except networks.NetworkError:
+                        return self._error(404, "Person not found.")
             if path == "/api/session":
                 return self._send({"token": state.token, "local_only": True})
             if path == "/api/cases":
@@ -183,6 +203,52 @@ def handler_for(state: DashboardState):
             try:
                 body = self._json_body()
                 path = urlsplit(self.path).path
+                if path == "/api/network-workspaces":
+                    with state.lock:
+                        workspace = networks.create_workspace(body.get("name"), body.get("description", ""))
+                    return self._send({"workspace": workspace}, 201)
+                if path.startswith("/api/network-workspaces/"):
+                    parts = path.strip("/").split("/")
+                    if len(parts) == 4:
+                        workspace_id, action = parts[2], parts[3]
+                        with state.lock:
+                            if action == "people":
+                                workspace = networks.get_workspace(workspace_id)
+                                if len(workspace["people"]) >= networks.MAX_PEOPLE:
+                                    raise networks.NetworkError("Workspace person limit reached.")
+                                person = networks.create_person(
+                                    body.get("name"), body.get("details", "")
+                                )
+                                networks.attach_person(workspace_id, person["id"])
+                                return self._send({"person": person}, 201)
+                            if action == "members":
+                                ws = networks.attach_person(workspace_id, body.get("person_id"))
+                                return self._send({"workspace_id": ws["id"], "person_id": body.get("person_id")})
+                            if action == "groups":
+                                group = networks.create_group(
+                                    workspace_id, body.get("name"),
+                                    body.get("kind"), body.get("details", "")
+                                )
+                                return self._send({"group": group}, 201)
+                            if action == "links":
+                                edge = networks.create_link(
+                                    workspace_id, body.get("source"), body.get("target"),
+                                    body.get("type"), body.get("note", "")
+                                )
+                                return self._send({"edge": edge}, 201)
+                            if action == "positions":
+                                position = networks.set_position(
+                                    workspace_id, body.get("node_id"),
+                                    body.get("x"), body.get("y")
+                                )
+                                return self._send({"position": position})
+                if path.startswith("/api/network-people/"):
+                    parts = path.strip("/").split("/")
+                    if len(parts) == 3:
+                        with state.lock:
+                            person = networks.update_person(parts[2], body.get("name"),
+                                                            body.get("details", ""))
+                        return self._send({"person": person})
                 if path in ("/api/preview", "/api/jobs"):
                     clues = engine.normalize_clues(
                         names=body.get("names"), usernames=body.get("usernames"),

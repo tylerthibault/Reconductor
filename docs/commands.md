@@ -1,3 +1,18 @@
+## Independent relationship network workspaces
+
+Run `reconductor web`, then select **Relationship networks** in the sidebar,
+or open `http://127.0.0.1:8765/network.html`.
+
+Manage independent Markdown network workspaces: add people (or reuse shared
+profiles), organizations/groups, and explicitly labeled relationships.
+The graph clusters people around shared groups **without** adding inferred
+person-to-person links. Click a person and **Show other workspaces** to
+reveal their other memberships; relationships remain local to each workspace.
+
+People, workspaces, groups, graph notes, and saved positions are stored in
+`~/.local/share/reconductor/networks/`. No external API requests are made by
+this feature. Research case files are not altered or auto-imported.
+
 # Command reference
 
 ## Markdown case vault and explicit migration

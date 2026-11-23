@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Reconductor — Relationship Networks</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/network.css">
+  <script src="/network.js" defer></script>
+</head>
+<body>
+  <div class="network-shell">
+    <aside class="network-sidebar">
+      <div class="network-brand"><div class="network-mark">◎</div><div><strong>RECONDUCTOR</strong><small>RELATIONSHIP NETWORKS</small></div></div>
+      <a class="back-link" href="/">← Investigation dashboard</a>
+      <button id="newWorkspace" class="primary full">＋ New workspace</button>
+      <div class="section-label">YOUR NETWORKS <button id="refreshWorkspaces" aria-label="Refresh workspaces" title="Refresh workspaces">↻</button></div>
+      <nav id="workspaceList" aria-label="Relationship workspaces"><p class="muted">Loading…</p></nav>
+      <div class="sidebar-security">● Private local Markdown files <small>People are shared · Connections are separate</small></div>
+    </aside>
+    <main class="network-main">
+      <header class="network-topbar"><span>WORKSPACE / <b id="breadcrumb">Networks</b></span><span class="server-pill"><span class="local-dot"></span> LOCAL ONLY</span></header>
+      <section id="networkWelcome" class="network-welcome">
+        <div class="hero-graphic">◎ <span>◉</span> ◎</div>
+        <div class="eyebrow">EXPLORE RELATIONSHIPS</div>
+        <h1>See how your circles connect.</h1>
+        <p>Build separate networks for your family, community, church, or research. Reuse people across networks without mixing their relationships.</p>
+        <button class="primary" id="welcomeCreate">Create your first workspace</button>
+      </section>
+      <section id="networkView" hidden>
+        <div class="view-heading"><div><div class="eyebrow">INDEPENDENT NETWORK WORKSPACE</div><h1 id="networkName"></h1><p id="networkDescription" class="muted"></p></div><span class="network-private">Connections stay in this workspace</span></div>
+        <div class="stat-strip">
+          <div><strong id="peopleCount">0</strong><span>People</span></div>
+          <div><strong id="groupsCount">0</strong><span>Organizations / groups</span></div>
+          <div><strong id="edgesCount">0</strong><span>Relationships</span></div>
+          <div><strong id="clustersCount">0</strong><span>Shared groups</span></div>
+        </div>
+        <div class="network-toolbar">
+          <button id="addPerson" class="primary">＋ Add person</button>
+          <button id="reusePerson" class="outline">↗ Add existing person</button>
+          <button id="addGroup" class="outline">＋ Add group</button>
+          <button id="addLink" class="outline">↗ Add relationship</button>
+        </div>
+        <div class="network-advisory">Groups are formed from the connections <b>you explicitly add</b>. People working at the same place are not automatically assumed to know one another.</div>
+        <div class="network-columns">
+          <div class="network-map">
+            <div class="canvas-bar"><span>RELATIONSHIP MAP</span><div><button id="fitNetwork" class="mini">Fit graph</button></div></div>
+            <canvas id="networkCanvas" aria-label="Draggable relationship graph of people and groups; the text list below is an alternative view"></canvas>
+            <div class="canvas-guide">Drag nodes to arrange · Drag background to pan · Scroll to zoom · Select a node for details</div>
+          </div>
+          <aside class="network-inspector">
+            <h2>Node details</h2>
+            <div id="networkNodeDetails" class="inspector-content"><p class="muted">Select a person or group to inspect it and its relationships.</p></div>
+            <div class="network-legend"><span><i class="key-dot people"></i> Person (shared profile)</span><span><i class="key-dot groups"></i> Group (this workspace)</span><span><i class="key-line"></i> Explicit relationship</span></div>
+          </aside>
+        </div>
+        <div class="below-map">
+          <div class="network-panel"><h2>Shared-connection clusters</h2><p class="muted">Groups below contain two or more people with explicitly entered connections.</p><div id="clusterList"></div></div>
+          <div class="network-panel"><h2>People and groups <small>Text view</small></h2><div id="networkNodes" class="network-node-list"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <dialog id="workspaceDialog"><form id="workspaceForm"><div class="modal-head"><div><div class="eyebrow">NEW NETWORK</div><h2>Create a workspace</h2><p class="muted">Its relationships stay separate from other networks.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>Workspace name<input name="name" required maxlength="90" placeholder="Family network"></label><label>Description (optional)<input name="description" maxlength="350" placeholder="Our family's connections"></label><button type="submit" class="primary full">Create workspace</button><p class="error" role="alert"></p></form></dialog>
+  <dialog id="personDialog"><form id="personForm"><div class="modal-head"><div><div class="eyebrow">SHARED PERSON PROFILE</div><h2>Add a person</h2><p class="muted">This person's basic profile can also be reused in other networks.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>Display name<input name="name" required maxlength="90" placeholder="Person's name"></label><label>Shared profile notes (optional)<textarea name="details" maxlength="500" rows="3" placeholder="Information you'd want available in every workspace"></textarea></label><button type="submit" class="primary full">Create and add person</button><p class="error" role="alert"></p></form></dialog>
+  <dialog id="existingDialog"><form id="existingForm"><div class="modal-head"><div><div class="eyebrow">REUSE A PROFILE</div><h2>Add existing person</h2><p class="muted">Only their profile is shared. Relationships from other workspaces will not be imported.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>Select a shared person<select id="existingSelect" name="person_id" required></select></label><button type="submit" class="primary full">Add to this workspace</button><p class="error" role="alert"></p></form></dialog>
+  <dialog id="groupDialog"><form id="groupForm"><div class="modal-head"><div><div class="eyebrow">ORGANIZATIONS & GROUPS</div><h2>Add a group</h2><p class="muted">Create a family, workplace, church, school, or another shared circle.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>Group name<input name="name" required maxlength="90" placeholder="Grace City Church"></label><label>Type<select name="kind"><option value="family">Family</option><option value="organization" selected>Organization / church</option><option value="workplace">Workplace</option><option value="school">School</option><option value="community">Community</option><option value="other">Other</option></select></label><label>Notes (optional)<textarea name="details" maxlength="300" rows="2" placeholder="Optional group context"></textarea></label><button type="submit" class="primary full">Add group</button><p class="error" role="alert"></p></form></dialog>
+  <dialog id="linkDialog"><form id="linkForm"><div class="modal-head"><div><div class="eyebrow">EXPLICIT RELATIONSHIP</div><h2>Connect two nodes</h2><p class="muted">Only nodes in the current workspace can be linked.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>From<select id="linkSource" name="source" required></select></label><label>Relationship<select name="type"><option>connected to</option><option>member of</option><option>works at</option><option>attends</option><option>volunteers at</option><option>friend of</option><option>related to</option><option>knows</option><option>coworker of</option><option>other</option></select></label><label>To<select id="linkTarget" name="target" required></select></label><label>Context (optional)<textarea name="note" maxlength="300" rows="2" placeholder="Why are these nodes connected?"></textarea></label><button type="submit" class="primary full">Save relationship</button><p class="error" role="alert"></p></form></dialog>
+  <dialog id="editDialog"><form id="editForm"><div class="modal-head"><div><div class="eyebrow">SHARED PROFILE</div><h2>Edit person</h2><p class="muted">Changes to the basic profile will display in every workspace using this person.</p></div><button type="button" class="iconbutton close-modal" aria-label="Close">✕</button></div><label>Display name<input name="name" required maxlength="90"></label><label>Shared profile notes<textarea name="details" maxlength="500" rows="3"></textarea></label><button type="submit" class="primary full">Save shared profile</button><p class="error" role="alert"></p></form></dialog>
+  <div id="networkToast" class="toast" role="status" hidden></div>
+</body>
+</html>
