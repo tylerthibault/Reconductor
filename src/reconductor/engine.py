@@ -178,7 +178,7 @@ def _dossier(folder: Path, record: dict[str, Any]) -> None:
     lines.extend(["", "## Discovered leads (NOT verified identities)", ""])
     if record["leads"]:
         for lead in record["leads"]:
-            lines.append(f"- {lead['kind']}: {lead['value']} — {lead['status']}; evidence: {lead['origin']}")
+            lines.append(f"- {lead.get('kind', '?')}: {lead.get('value', '?')} — {lead.get('status', 'unverified_candidate')}; evidence: {lead.get('origin', 'Unknown')}")
     else:
         lines.append("No supported structured leads were extracted.")
     lines.extend(["", "## Tool execution", "",

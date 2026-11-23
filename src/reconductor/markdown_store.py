@@ -262,7 +262,7 @@ def write_graph(folder: Path, graph: dict, refs: dict[str, str] | None = None) -
     refs = refs or {}
     lines = ["---", "reconductor: graph", "format: markdown-v1", "---", "",
              "# Relationship map", "",
-             "> [!warning] These links are user-entered, not automatically verified.", "",
+             "> [!warning] UNVERIFIED: these links are user-entered, not automatically verified.", "",
              "## People", ""]
     for p in graph.get("people", []):
         ref = refs.get(p.get("id"))
