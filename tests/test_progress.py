@@ -72,7 +72,6 @@ class ProgressTests(unittest.TestCase):
                             on_progress=events.append
                         )
             self.assertEqual(record["status"], "completed")
-            self.assertEqual(record["status"], "completed")
             kinds = [event["event"] for event in events]
             self.assertEqual(kinds, [
                 "case_started", "step_started", "heartbeat",

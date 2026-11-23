@@ -13,7 +13,8 @@
 - Local case folders with `case.json`, `report.md`, and raw tool logs.
 - Passive-only SpiderFoot preset for domain research; no port scanning or intrusive requests by design.
 - Explicit confirmation required to execute **any network research**.
-- Live progress for both `scan` and `investigate`: tool start, elapsed-time heartbeat, timeout and status. Use `--no-progress` to silence.\n- Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
+- Live progress for both `scan` and `investigate`: tool start, elapsed-time heartbeat, timeout and status. Use `--no-progress` to silence.
+- Rules-based multi-clue research with a bounded candidate-lead queue; no LLM required.
 - Local dossier separates unverified leads from operator-supplied clues and reports missing worldwide record coverage.
 - Works without a local AI model. Python standard library only at runtime.
 
